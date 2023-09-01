@@ -855,7 +855,7 @@ procedure( SetUpLog_utilityprogram( log_name)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Form
 
-procedure( NewForm_utilityprogram( file_name header port_width port_height @optional ( close_title t))
+procedure( NewForm_utilityprogram( file_name header port_width port_height @optional ( start_title t))
 	prog( ( out_port)
 		out_port = outfile( file_name "w")
 		unless( outportp( out_port)
@@ -868,7 +868,7 @@ procedure( NewForm_utilityprogram( file_name header port_width port_height @opti
 		fprintf( out_port "FIXED\n")
 		fprintf( out_port "PORT %d %d\n" port_width port_height)
 		fprintf( out_port "HEADER \"%s\"\n" header)
-		when( close_title
+		when( start_title
 			fprintf( out_port "TILE\n")
 		)
 		
@@ -900,20 +900,54 @@ procedure( WriteFormButton_utilityprogram( out_port field content x y width heig
 	)
 )
 
-procedure( WriteFormStrFillin_utilityprogram( out_port field x y width height)
-	let( ()
-		fprintf( out_port "FIELD %s\n" field)
-		fprintf( out_port "FLOC %d %d\n" x y)
-		fprintf( out_port "STRFILLIN %d %d\n" width height)
-		fprintf( out_port "ENDFIELD\n")
-	)
-)
-
 procedure( WriteFormText_utilityprogram( out_port text x y)
 	let( ()
 		fprintf( out_port "TEXT \"%s\" \n" text)
 		fprintf( out_port "FLOC %d %d\n" x y)
 		fprintf( out_port "ENDTEXT\n")
+	)
+)
+
+procedure( WriteFormStrFillin_utilityprogram( out_port field x y width field_length @key (info_only nil))
+	let( ()
+		; textbox
+		fprintf( out_port "FIELD %s\n" field)
+		fprintf( out_port "FLOC %d %d\n" x y)
+		fprintf( out_port "STRFILLIN %d %d\n" width field_length)
+		when( info_only
+			fprintf( out_port "INFO_ONLY\n")
+		)
+		
+		fprintf( out_port "ENDFIELD\n")
+	)
+)
+
+procedure( WriteFormIntFillin_utilityprogram( out_port field x y width field_length @key (info_only nil))
+	let( ()
+		; numeric textbox
+		fprintf( out_port "FIELD %s\n" field)
+		fprintf( out_port "FLOC %d %d\n" x y)
+		fprintf( out_port "INTFILLIN %d %d\n" width field_length)
+		fprintf( out_port "ENDFIELD\n")
+	)
+)
+
+procedure( WriteFormRealFillin_utilityprogram( out_port field x y width field_length @key (decimal 2) (min nil) (max nil) (info_only nil))
+	let( ()
+		; numeric textbox (floating point numbers)
+		fprintf( out_port "FIELD %s\n" field)
+		fprintf( out_port "FLOC %d %d\n" x y)
+		fprintf( out_port "REALFILLIN %d %d\n" width field_length)
+		fprintf( out_port "DECIMAL %d\n" decimal)
+		when( min
+			fprintf( out_port "MIN %d\n" min)
+		)
+		
+		when( max
+			fprintf( out_port "MAX %d\n" max)
+		)
+		
+		fprintf( out_port "ENDFIELD\n")
 	)
 )
 
