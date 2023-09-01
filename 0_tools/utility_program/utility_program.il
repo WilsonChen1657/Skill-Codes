@@ -485,6 +485,17 @@ defun( UniqueList_utilityprogram ( data)
 	)
 )
 
+procedure( ListDuplicated_utilityprogram( data_ls)
+	let( ()
+		when( data_ls
+			if( member( car(data_ls) cdr(data_ls))
+				cons( car(data_ls) ListDuplicated_utilityprogram( remove( car(data_ls) cdr(data_ls))))
+				ListDuplicated_utilityprogram( remove( car(data_ls) cdr(data_ls)))
+			)
+		)
+	)
+)
+
 procedure( CreateMeter_utilityprogram( title @optional (info_str ""))
 	prog( ( result)
 		result = axlMeterCreate( title info_str t)
@@ -605,6 +616,73 @@ procedure( CheckOKToProceed_utilityprogram()
 		return( t)
 	)
 )
+
+procedure( SpeedUp_utilityprogram()
+	let( ()
+		; shape dynamic fill set to disabled
+		axlDBControl( 'dynamicFillMode nil)
+		; disabled on-line DRC
+		axlDBControl( 'drcEnable nil)
+	)
+)
+
+procedure( UpdateDRC_utilityprogram()
+	let( ( time_start time_end)
+		; shape dynamic fill set to smooth
+		axlDBControl( 'dynamicFillMode 'wysiwyg)
+		; Enable on-line DRC
+		axlDBControl( 'drcEnable t)
+		if( axlUIYesNo( "Do you want to update to smooth and update DRCs?") then
+			println( "Start updating to smooth")
+			time_start = getCurrentTime()
+			; update dynamic shapes
+			axlDBDynamicShapes( t)
+			time_end = getCurrentTime()
+			println( "Finish updating to smooth")
+			PrintProcessTime_utilityprogram( "Update to smooth" time_start time_end)
+		
+			println( "Start updating DRCs")
+			time_start = getCurrentTime()
+			; update DRC
+			axlShell( "drc update")
+			time_end = getCurrentTime()
+			println( "Finish updating DRCs")
+			PrintProcessTime_utilityprogram( "Update to smooth" time_start time_end)
+		)
+	)
+)
+
+procedure( PrintProcessTime_utilityprogram( title time_start time_end)
+	time_passed_seconds = compareTime( time_end time_start)
+	tm = timeToTm( time_passed_seconds)
+	printf( "%s process time : %d min %d sec\n" title tm->tm_min tm->tm_sec)
+)
+
+procedure( OpenDirectory_utilityprogram( dir)
+	let( ( cmd)
+		sprintf( cmd "start \"\" \"%s\" " dir)
+		sh( cmd)
+	)
+)
+
+procedure( SelectObjectByUser_utilityprogram( filter @key (prompt nil))
+	prog( ( obj_ls)
+		SetFindFilter_utilityprogram( filter)
+		CreatePopup_utilityprogram()
+		while( axlSelect( ?prompt prompt)
+			obj_ls = axlGetSelSet()
+		)
+		
+		axlClearSelSet()
+		axlUIPopupSet( nil)
+		when( obj_ls
+			ResetFindFilter_utilityprogram()
+		)
+		
+		return( obj_ls)
+	)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
@@ -1253,7 +1331,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v2d9.il" "c:/skill/utility_program_v2d9.ile")
-(load "utility_program_v2d9.il")
-(load "utility_program_v2d9.ile")
+(encrypt "c:/skill/utility_program_v3d0.il" "c:/skill/utility_program_v3d0.ile")
+(load "utility_program_v3d0.il")
+(load "utility_program_v3d0.ile")
 */
