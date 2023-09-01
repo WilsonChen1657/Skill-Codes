@@ -1056,23 +1056,51 @@ procedure( WriteFormIntFillin_utilityprogram( out_port field x y width field_len
 		fprintf( out_port "FIELD %s\n" field)
 		fprintf( out_port "FLOC %d %d\n" x y)
 		fprintf( out_port "INTFILLIN %d %d\n" width field_length)
+		when( info_only
+			fprintf( out_port "INFO_ONLY\n")
+		)
+		
 		fprintf( out_port "ENDFIELD\n")
 	)
 )
 
-procedure( WriteFormRealFillin_utilityprogram( out_port field x y width field_length @key (decimal 2) (min nil) (max nil) (info_only nil))
+procedure( WriteFormIntSlideBar_utilityprogram( out_port field x y width field_length @key (min_value 1.0) (max_value 100.0))
+	let( ()
+		; numeric textbox with up/down control
+		unless( and( min_value max_value numberp( min_value) numberp( max_value)) 
+			error( "INTSLIDEBAR must input min & max value")
+		)
+		
+		; convert to float
+		min_value = atof( sprintf( min_value "%L" min_value))
+		max_value = atof( sprintf( max_value "%L" max_value))
+		
+		fprintf( out_port "FIELD %s\n" field)
+		fprintf( out_port "FLOC %d %d\n" x y)
+		fprintf( out_port "INTSLIDEBAR %d %d\n" width field_length)
+		fprintf( out_port "MIN %f\n" min_value)
+		fprintf( out_port "MAX %f\n" max_value)
+		fprintf( out_port "ENDFIELD\n")
+	)
+)
+
+procedure( WriteFormRealFillin_utilityprogram( out_port field x y width field_length @key (decimal 2) (min_value nil) (max_value nil) (info_only nil))
 	let( ()
 		; numeric textbox (floating point numbers)
 		fprintf( out_port "FIELD %s\n" field)
 		fprintf( out_port "FLOC %d %d\n" x y)
 		fprintf( out_port "REALFILLIN %d %d\n" width field_length)
 		fprintf( out_port "DECIMAL %d\n" decimal)
-		when( min
-			fprintf( out_port "MIN %f\n" min)
+		when( min_value
+			fprintf( out_port "MIN %f\n" min_value)
 		)
 		
-		when( max
-			fprintf( out_port "MAX %f\n" max)
+		when( max_value
+			fprintf( out_port "MAX %f\n" max_value)
+		)
+		
+		when( info_only
+			fprintf( out_port "INFO_ONLY\n")
 		)
 		
 		fprintf( out_port "ENDFIELD\n")
@@ -1218,7 +1246,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v2d6.il" "c:/skill/utility_program_v2d6.ile")
-(load "utility_program_v2d6.il")
-(load "utility_program_v2d6.ile")
+(encrypt "c:/skill/utility_program_v2d7.il" "c:/skill/utility_program_v2d7.ile")
+(load "utility_program_v2d7.il")
+(load "utility_program_v2d7.ile")
 */
