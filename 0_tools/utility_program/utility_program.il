@@ -1124,7 +1124,7 @@ procedure( NewForm_utilityprogram( file_name header port_width port_height @opti
 		)
 		
 		fprintf( out_port "FILE_TYPE=FORM_DEFN VERSION=1\n")
-		fprintf( out_port "FORM TOOLWINDOW\n")
+		fprintf( out_port "FORM \n")
 		fprintf( out_port "FIXED\n")
 		fprintf( out_port "PORT %d %d\n" port_width port_height)
 		fprintf( out_port "HEADER \"%s\"\n" header)
@@ -1321,6 +1321,79 @@ procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key (t
 	)
 )
 
+procedure( CreateFormCol_utilityprogram( out_form grid_key type text label @key (col_width 8) (align 'left) (popup nil) (decimals nil))
+	let( ( col)
+		col = make_formGridCol()
+		col->fieldType = type
+		col->headText = text
+		col->scriptLabel = label
+		col->colWidth = col_width
+		col->align = align
+		col->popup = popup
+		col->decimals = decimals
+		axlFormGridInsertCol( out_form grid_key col)
+	)
+)
+
+procedure( CreateGridCell_utilityprogram( out_form grid_key row col @key (value nil) (check nil) (no_edit t) (back_color nil))
+	let( ( cell)
+		cell = axlFormGridNewCell()
+		cell->row = row
+		cell->col = col
+		cell->value = value
+		cell->check = check
+		cell->noEdit = no_edit
+		when( symbolp( back_color)
+			cell->backColor = back_color
+		)
+		
+		axlFormSetField( out_form grid_key cell)
+	)
+)
+
+procedure( SetFormOptions_utilityprogram( out_form form_key_ls @optional (value t))
+	let( ()
+		foreach( form_key form_key_ls
+			axlFormSetField( out_form form_key value)
+		)
+	)
+)
+
+procedure( UpdateFormData_utilityprogram( out_form grid_key grid_col row_ls @key (value nil) (check nil))
+	let( ( cell)
+		cell = axlFormGridNewCell()
+		cell->col = grid_col
+		cell->value = value
+		cell->check = check
+		foreach( row row_ls
+			cell->row = row
+			axlFormSetField( out_form grid_key cell)
+		)
+		
+		axlFormGridUpdate( out_form grid_key)
+	)
+)
+
+procedure( GetGridChecked_utilityprogram( out_form grid_key check_col_index data_col_index)
+	prog( ( cell data_ls)
+		cell = axlFormGridNewCell()
+		foreach( row _total_row_ls
+			cell->row = row
+			; get check value on current row
+			cell->col = check_col_index
+			is_checked = axlFormGridGetCell( out_form grid_key cell)->check
+			when( is_checked
+				; get data on current row
+				cell->col = data_col_index
+				data = axlFormGridGetCell( out_form grid_key cell)->value
+				data_ls = append1( data_ls data)
+			)
+		)
+		
+		return( data_ls)
+	)
+)
+
 procedure( CreateMessageBox_utilityprogram( msg title @optional (button_info_ls list( list( 'yes "Yes") list( 'no "No"))) (def_key 'yes))
 	prog( ( file_name port_width port_height out_port context_x context_y button_width button_height button_x y_end form)
 		file_name = "msg_box.form"
@@ -1389,7 +1462,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v3d3.il" "c:/skill/utility_program_v3d3.ile")
-(load "utility_program_v3d3.il")
-(load "utility_program_v3d3.ile")
+(encrypt "c:/skill/utility_program_v3d4.il" "c:/skill/utility_program_v3d4.ile")
+(load "utility_program_v3d4.il")
+(load "utility_program_v3d4.ile")
 */
