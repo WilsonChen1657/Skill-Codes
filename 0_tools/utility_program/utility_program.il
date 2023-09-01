@@ -130,7 +130,6 @@ procedure( GetSchematicName_utilityprogram()
 	)
 )
 
-
 procedure( ReadCSVLine_utilityprogram( csv_filename @optional (skip_row 1))
 	prog( ( in_port data_line_ls)
 		in_port = infile( csv_filename)
@@ -987,6 +986,73 @@ procedure( WriteFormGrid_utilityprogram( out_port field x y width height @option
 	)
 )
 
+procedure( CreateMessageBox_utilityprogram( msg title @optional ( button_info_ls list( list( 'yes "Yes") list( 'no "No"))) ( def_key 'yes))
+	prog( ( file_name port_width port_height out_port context_x context_y button_width button_height button_x y_end form)
+		file_name = "msg_box.form"
+		group_width = 60
+		
+		port_width = group_width + 2
+		port_height = 30
+		out_port = NewForm_utilityprogram( file_name title port_width port_height)
+		unless( out_port
+			return( nil)
+		)
+		
+		group_x = 1
+		group_y = 1
+		
+		context_x = 3
+		
+		y_end = group_y
+		
+		WriteFormText_utilityprogram( out_port msg context_x y_end)
+		
+		y_end = y_end + 2
+		WriteFormGroup_utilityprogram( out_port "" group_x group_y group_width y_end)
+		
+		button_width = 20
+		button_height = 2
+		
+		button_x = context_x
+		y_end = y_end + 2
+		
+		foreach( button_info button_info_ls
+			key = car( button_info)
+			content = cadr( button_info)
+			WriteFormButton_utilityprogram( out_port key content button_x y_end button_width button_height)
+			button_x = button_x + button_width
+		)
+		
+		EndForm_utilityprogram( out_port)
+		
+		close( out_port)
+		
+		form = axlFormCreate( gensym() file_name '( "east" "outer") 'MessageBoxFormActions_utilityprogram nil)
+		
+		axlFormDefaultButton( form def_key)
+		axlFormDisplay( form)
+		; to handle after message box close
+		axlUIWBlock( form)
+		return( _msg_box_result)
+	)
+)
+
+procedure( MessageBoxFormActions_utilityprogram( form)
+	prog( ( cur_field)
+		unless( axlIsFormType( form)
+			println( "ArgErr: FormActions() - form_id is not in form type")
+			return( nil)
+		)
+		
+		_msg_box_result = nil
+		unless( blankstrp( form->curField)
+			_msg_box_result = stringToSymbol( form->curField)
+		)
+		
+		axlFormClose( form)
+		return( t)
+	)
+)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
