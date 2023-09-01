@@ -569,10 +569,10 @@ procedure( CreateShapeByPoints_utilityprogram( points layer)
 	)
 )
 
-procedure( OpenHelpPpt_utilityprogram( target_file_name)
+procedure( OpenHelpFile_utilityprogram( target_file_name)
 	let( ( help_path)
 		help_path = "W:/footprint_building_aid_skill/0-0_Help/"
-		OpenFile_utilityprogram( help_path target_file_name ".ppsx")
+		OpenFile_utilityprogram( help_path target_file_name ".pdf")
 	)
 )
 
@@ -1218,7 +1218,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v2d5.il" "c:/skill/utility_program_v2d5.ile")
-(load "utility_program_v2d5.il")
-(load "utility_program_v2d5.ile")
+(encrypt "c:/skill/utility_program_v2d6.il" "c:/skill/utility_program_v2d6.ile")
+(load "utility_program_v2d6.il")
+(load "utility_program_v2d6.ile")
 */
