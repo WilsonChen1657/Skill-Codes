@@ -14,7 +14,8 @@
 setq( _wilson_init_flag t)
 setq( _allegro_version axlVersion( 'version))
 setq( _allegro_unit nil)
-setq( _skill_package_path "W:/footprint_building_aid_skill/1-0_skill_package/")
+; this will reset at skill_package_tdc_flex when in test mode
+setq( _skill_package_path strcat( _flex_host_dir "footprint_building_aid_skill/official/Skill_package/"))
 
 setq( _month_ls list( nil "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
 setq( _alphabet_total 26)
@@ -582,7 +583,7 @@ procedure( CreateShapeByPoints_utilityprogram( points layer)
 
 procedure( OpenHelpFile_utilityprogram( target_file_name)
 	let( ( help_path)
-		help_path = "W:/footprint_building_aid_skill/0-0_Help/"
+		help_path = strcat( _flex_host_dir "footprint_building_aid_skill/Help/")
 		OpenFile_utilityprogram( help_path target_file_name ".pdf")
 	)
 )
@@ -1263,7 +1264,7 @@ procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key (t
 	)
 )
 
-procedure( CreateMessageBox_utilityprogram( msg title @optional ( button_info_ls list( list( 'yes "Yes") list( 'no "No"))) ( def_key 'yes))
+procedure( CreateMessageBox_utilityprogram( msg title @optional (button_info_ls list( list( 'yes "Yes") list( 'no "No"))) (def_key 'yes))
 	prog( ( file_name port_width port_height out_port context_x context_y button_width button_height button_x y_end form)
 		file_name = "msg_box.form"
 		group_width = 60
@@ -1276,15 +1277,13 @@ procedure( CreateMessageBox_utilityprogram( msg title @optional ( button_info_ls
 		)
 		
 		group_x = 1
-		group_y = 1
+		group_y = 0
 		
 		context_x = 3
-		
-		y_end = group_y
-		
+		y_end = group_y + 2
 		WriteFormText_utilityprogram( out_port msg context_x y_end)
 		
-		y_end = y_end + 2
+		y_end = y_end + 3
 		WriteFormGroup_utilityprogram( out_port "" group_x group_y group_width y_end)
 		
 		button_width = 20
@@ -1333,7 +1332,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v3d1.il" "c:/skill/utility_program_v3d1.ile")
-(load "utility_program_v3d1.il")
-(load "utility_program_v3d1.ile")
+(encrypt "c:/skill/utility_program_v3d2.il" "c:/skill/utility_program_v3d2.ile")
+(load "utility_program_v3d2.il")
+(load "utility_program_v3d2.ile")
 */
