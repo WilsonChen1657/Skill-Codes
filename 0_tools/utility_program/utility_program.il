@@ -922,7 +922,7 @@ procedure( WriteFormCheckList_utilityprogram( out_port field content x y @option
 		; CheckBox
 		fprintf( out_port "FIELD %s\n" field)
 		fprintf( out_port "FLOC %d %d\n" x y)
-		if( stringp( argument) then
+		if( argument then
 			fprintf( out_port "CHECKLIST \"%s\" \"%s\"\n" content argument)
 		else
 			fprintf( out_port "CHECKLIST \"%s\"\n" content)
