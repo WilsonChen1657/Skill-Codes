@@ -1068,7 +1068,7 @@ procedure( SetUpLog_utilityprogram( log_name @key (mode "w") (log_time nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Form
 
-procedure( NewForm_utilityprogram( file_name header port_width port_height @optional ( start_title t))
+procedure( NewForm_utilityprogram( file_name header port_width port_height @optional (start_title t))
 	prog( ( out_port)
 		out_port = outfile( file_name "w")
 		unless( outportp( out_port)
@@ -1192,7 +1192,7 @@ procedure( WriteFormRealFillin_utilityprogram( out_port field x y width field_le
 	)
 )
 
-procedure( WriteFormCheckList_utilityprogram( out_port field content x y @optional ( argument nil))
+procedure( WriteFormCheckList_utilityprogram( out_port field content x y @optional (argument nil))
 	let( ()
 		; CheckBox
 		fprintf( out_port "FIELD %s\n" field)
@@ -1207,7 +1207,7 @@ procedure( WriteFormCheckList_utilityprogram( out_port field content x y @option
 	)
 )
 
-procedure( WriteFormEnumSet_utilityprogram( out_port field x y width @optional ( height 0) ( pop_name nil))
+procedure( WriteFormEnumSet_utilityprogram( out_port field x y width @optional (height 0) (pop_name nil))
 	let( ()
 		; ComboBox
 		fprintf( out_port "FIELD %s\n" field)
@@ -1226,7 +1226,7 @@ procedure( WriteFormEnumSet_utilityprogram( out_port field x y width @optional (
 )
 
 procedure( WriteFormPopup_utilityprogram( out_port name option_ls)
-	let( ()
+	let( ( option)
 		option = ParseFormPopupOption_utilityprogram( option_ls)
 		fprintf( out_port "POPUP <%s> %s\n" name option)
 	)
@@ -1237,12 +1237,11 @@ procedure( ParseFormPopupOption_utilityprogram( option_ls)
 		options = mapcar( lambda( (x) sprintf( nil "\"%s\" \"%s\" " x x)) option_ls)
 		option = buildString( options ",")
 		option = strcat( option ".")
-		
 		return( option)
 	)
 )
 
-procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key ( top_size 2) ( side_size 5))
+procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key (top_size 2) (side_size 5))
 	let( ()
 		fprintf( out_port "GRID %s\n" field)
 		fprintf( out_port "FLOC %d %d\n" x y)
@@ -1251,12 +1250,15 @@ procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key ( 
 		fprintf( out_port "OPTIONS HLINES VLINES\n")
 		fprintf( out_port "GHEAD TOP\n")
 		fprintf( out_port "HEADSIZE %d\n" top_size)
-		fprintf( out_port "OPTIONS %s\n" "3D")
+		fprintf( out_port "OPTIONS 3D\n")
 		fprintf( out_port "ENDGHEAD\n")
-		fprintf( out_port "GHEAD SIDE\n")
-		fprintf( out_port "HEADSIZE %d\n" side_size)
-		fprintf( out_port "OPTIONS %s\n" "3D")
-		fprintf( out_port "ENDGHEAD\n")
+		when( side_size
+			fprintf( out_port "GHEAD SIDE\n")
+			fprintf( out_port "HEADSIZE %d\n" side_size)
+			fprintf( out_port "OPTIONS 3D\n")
+			fprintf( out_port "ENDGHEAD\n")
+		)
+		
 		fprintf( out_port "ENDGRID\n\n")
 	)
 )
@@ -1331,7 +1333,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v3d0.il" "c:/skill/utility_program_v3d0.ile")
-(load "utility_program_v3d0.il")
-(load "utility_program_v3d0.ile")
+(encrypt "c:/skill/utility_program_v3d1.il" "c:/skill/utility_program_v3d1.ile")
+(load "utility_program_v3d1.il")
+(load "utility_program_v3d1.ile")
 */
