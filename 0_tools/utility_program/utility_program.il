@@ -603,7 +603,7 @@ procedure( OpenFile_utilityprogram( file_path target_file_name extension)
 	)
 )
 
-procedure( CreatePopup_utilityprogram()
+procedure( CreateDoneCancelPopup_utilityprogram()
 	let( ( display_popup)
 		display_popup = axlUIPopupDefine( nil list( list( "Done" 'axlFinishEnterFun) list( "Cancel" 'axlCancelEnterFun)))
 		axlUIPopupSet( display_popup)
@@ -676,7 +676,7 @@ procedure( OpenDirectory_utilityprogram( dir)
 procedure( SelectObjectByUser_utilityprogram( filter @key (prompt nil))
 	prog( ( obj_ls)
 		SetFindFilter_utilityprogram( filter)
-		CreatePopup_utilityprogram()
+		CreateDoneCancelPopup_utilityprogram()
 		while( axlSelect( ?prompt prompt)
 			obj_ls = axlGetSelSet()
 		)
@@ -715,6 +715,68 @@ procedure( DeleteLayer_utilityprogram( layer_ls)
 		)
 		
 		return( t)
+	)
+)
+
+procedure( FlattenList_utilityprogram( data_list)
+	foreach( mapcan data data_list
+		if( listp( data)
+			FlattenList_utilityprogram(data)
+			list( data)
+		)
+	)
+)
+
+; <cdsroot>/share/pcb/examples/skill/cmds/cns-design.il
+;----------------------------------------------------------------
+; The next three items support interactive command processing
+;       We are told to done ourself so another cmd can start
+procedure( _AcDesignDone( fw)
+    when( fw && fw->_change
+        ; hide form so user can access stop button
+        axlUIWShow( fw 'hide)
+        _AcDesignDoit( fw)
+		fw->_change = nil       ; prevents double from axlEnterEvent
+    )
+
+    _AcDesignCancel( fw)
+)
+
+procedure( _AcDesignCancel( fw)
+    when(fw
+        axlFormClose( fw)
+    )
+)
+
+; basically a dummy event processor so we can autodone the form
+; in case the user starts another command. Maybe someday we can
+; support selecting nets this way
+;
+; Autodone will always send in a done so check if done or cancel
+; form should be called to save overhead of drc checking
+;
+; Use global form variable to avoid problem with form being closed
+; via a form button which results in the DONE/CANCEL events being
+; generated.
+
+; To fix issue below
+; Code works fine when started from skill prompt, but when started from allegro prompt the dbid's are removed right after the main procedure has finished.
+procedure( _AcDesignEvent( out_form)
+    let( ( event loop)
+		loop = t
+		while( loop
+			event = axlEnterEvent( '(PICK) "" nil)
+			caseq( event->type
+				( DONE
+					_AcDesignDone( out_form)
+					loop = nil
+				)
+				( CANCEL
+					_AcDesignCancel( out_form)
+					loop = nil
+				)
+			)
+		)
 	)
 )
 
@@ -1321,7 +1383,7 @@ procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key (t
 	)
 )
 
-procedure( CreateFormCol_utilityprogram( out_form grid_key type text label @key (col_width 8) (align 'left) (popup nil) (decimals nil))
+procedure( CreateFormCol_utilityprogram( out_form grid_key type text label @key (col_width 8) (align 'left) (popup nil) (decimals nil) (field_length nil))
 	let( ( col)
 		col = make_formGridCol()
 		col->fieldType = type
@@ -1331,6 +1393,7 @@ procedure( CreateFormCol_utilityprogram( out_form grid_key type text label @key 
 		col->align = align
 		col->popup = popup
 		col->decimals = decimals
+		col->fieldLength = field_length
 		axlFormGridInsertCol( out_form grid_key col)
 	)
 )
@@ -1462,7 +1525,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v3d4.il" "c:/skill/utility_program_v3d4.ile")
-(load "utility_program_v3d4.il")
-(load "utility_program_v3d4.ile")
+(encrypt "c:/skill/utility_program_v3d5.il" "c:/skill/utility_program_v3d5.ile")
+(load "utility_program_v3d5.il")
+(load "utility_program_v3d5.ile")
 */
