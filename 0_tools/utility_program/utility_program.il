@@ -469,6 +469,23 @@ procedure( CheckIsCallable_utilityprogram( function_name file_name)
 	)
 )
 
+unless( isCallable( 'mapcon)
+	defun( mapcon (fn @rest args)
+		let( ((buf (ncons nil)))
+			apply( map (lambda (@rest args) lconc( buf apply( fn args))) args)
+			car( buf)
+		)
+	)
+)
+
+defun( UniqueList_utilityprogram ( data)
+    foreach( mapcon data data
+		unless( member( car( data) cdr( data))
+			ncons( car( data))
+		)
+	)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
@@ -809,13 +826,12 @@ procedure( ResetFindFilter_utilityprogram()
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Log
 
-
 procedure( SetUpLog_utilityprogram( log_name)
 	prog( ( log_dir year month date hour minute second log_file_name log_path out_port)	
 		unless( axlGetVariable( "ads_sdlog")
 			axlSetVariable( "ads_sdlog" "log")
 		)
-
+		
 		log_dir = axlGetVariable( "ads_sdlog") || ""
 		unless( or( zerop( strlen( log_dir)) isDir( log_dir))
 			createDir( log_dir)
@@ -835,20 +851,21 @@ procedure( SetUpLog_utilityprogram( log_name)
 		return( list( out_port log_path))
 	)
 )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Log
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Form
 
-procedure( NewForm_utilityprogram( form_name header port_width port_height @optional ( close_title t))
+procedure( NewForm_utilityprogram( file_name header port_width port_height @optional ( close_title t))
 	prog( ( out_port)
-		out_port = outfile( form_name "w")
+		out_port = outfile( file_name "w")
 		unless( outportp( out_port)
 			println( "ERROR: NewForm_utilityprogram() - Fail to write form")
 			return( nil)
 		)
 		
 		fprintf( out_port "FILE_TYPE=FORM_DEFN VERSION=1\n")
-		fprintf( out_port "FORM TOOLWINDOW \n")
+		fprintf( out_port "FORM WINDOW\n")
 		fprintf( out_port "FIXED\n")
 		fprintf( out_port "PORT %d %d\n" port_width port_height)
 		fprintf( out_port "HEADER \"%s\"\n" header)
