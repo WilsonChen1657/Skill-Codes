@@ -543,14 +543,13 @@ procedure( RunReport_utilityprogram( cmd_format @optional (on_html nil))
 	)
 )
 
-
 procedure( GetLogSeperator_utilityprogram( @optional (title "") (total_length 120))
 	let( ( line_count seperator)
 		unless( blankstrp( title)
 			sprintf( title " %s " title)
 		)
 		
-		line_count = total_length - length( title)
+		line_count = total_length - strlen( title)
 		seperator = ""
 		for( i 1 (line_count / 2)
 			seperator = strcat( seperator "=")
@@ -570,6 +569,42 @@ procedure( CreateShapeByPoints_utilityprogram( points layer)
 	)
 )
 
+procedure( OpenHelpPpt_utilityprogram( target_file_name)
+	let( ( help_path)
+		help_path = "W:/footprint_building_aid_skill/0-0_Help/"
+		OpenFile_utilityprogram( help_path target_file_name ".ppsx")
+	)
+)
+
+procedure( OpenFile_utilityprogram( file_path target_file_name extension)
+	let( ( file_ls file_name)
+		when( and( stringp( file_path) !blankstrp( file_path))
+			file_ls = cddr( getDirFiles( file_path))
+			file_name = car( setof( x file_ls and( index( x extension) index( x target_file_name))))
+			when( file_name
+				shell( strcat( file_path file_name))
+			)
+		)
+	)
+)
+
+procedure( CreatePopup_utilityprogram()
+	let( ( display_popup)
+		display_popup = axlUIPopupDefine( nil list( list( "Done" 'axlFinishEnterFun) list( "Cancel" 'axlCancelEnterFun)))
+		axlUIPopupSet( display_popup)
+	)
+)
+
+procedure( CheckOKToProceed_utilityprogram()
+	prog( ()
+		unless( axlOKToProceed() 
+			println( "Please done current function to use this program")
+			return( nil)
+		)
+		
+		return( t)
+	)
+)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
@@ -1183,7 +1218,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program.il" "c:/skill/utility_program.ile")
-(load "utility_program.il")
-(load "utility_program.ile")
+(encrypt "c:/skill/utility_program_v2d5.il" "c:/skill/utility_program_v2d5.ile")
+(load "utility_program_v2d5.il")
+(load "utility_program_v2d5.ile")
 */
