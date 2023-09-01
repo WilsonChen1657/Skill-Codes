@@ -485,6 +485,21 @@ defun( UniqueList_utilityprogram ( data)
 	)
 )
 
+procedure( CreateMeter_utilityprogram( title @optional (info_str ""))
+	prog( ( result)
+		result = axlMeterCreate( title info_str t)
+		return( result)
+	)
+)
+
+procedure( UpdateMeter_utilityprogram( meter_count meter_total @optional (info_str "") (info_str2 ""))
+	let( ()
+		unless( axlMeterIsCancelled()
+			axlMeterUpdate( (100 * meter_count / meter_total) info_str info_str2)
+		)
+	)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
@@ -797,8 +812,7 @@ procedure( GetFindFilter_utilityprogram( layer filter)
 		axlVisibleDesign( nil)
 		axlVisibleLayer( layer t)
 		when( filter == '(vias)
-			sect_2 = parseString( layer "/")
-			subclass = cadr( sect_2)
+			subclass = cadr( parseString( layer "/"))
 			axlVisibleLayer( strcat( "VIA CLASS/" subclass) t)
 		)
 		
