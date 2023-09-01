@@ -14,6 +14,9 @@
 setq( _wilson_init_flag t)
 setq( _allegro_version axlVersion( 'version))
 setq( _allegro_unit nil)
+unless( boundp( '_flex_host_dir)
+	_flex_host_dir = "W:/"
+)
 ; this will reset at skill_package_tdc_flex when in test mode
 setq( _skill_package_path strcat( _flex_host_dir "footprint_building_aid_skill/official/Skill_package/"))
 
@@ -618,12 +621,16 @@ procedure( CheckOKToProceed_utilityprogram()
 	)
 )
 
-procedure( SpeedUp_utilityprogram()
+procedure( SpeedUp_utilityprogram( @optional (enable nil))
 	let( ()
 		; shape dynamic fill set to disabled
-		axlDBControl( 'dynamicFillMode nil)
+		if( enable
+			axlDBControl( 'dynamicFillMode 'wysiwyg)
+			axlDBControl( 'dynamicFillMode enable)
+		)
+		
 		; disabled on-line DRC
-		axlDBControl( 'drcEnable nil)
+		axlDBControl( 'drcEnable enable)
 	)
 )
 
@@ -681,6 +688,33 @@ procedure( SelectObjectByUser_utilityprogram( filter @key (prompt nil))
 		)
 		
 		return( obj_ls)
+	)
+)
+
+procedure( DeleteLayer_utilityprogram( layer_ls)
+	prog( ( layer_id_ls)
+		when( and( layer_ls !dtpr( layer_ls))
+			layer_ls = list( layer_ls)
+		)
+		
+		unless( forall( x layer_ls axlIsLayer( x))
+			println( "ArgErr: DeleteLayer() - \"%L\" not layer" layer_ls)
+			return( nil)
+		)
+		
+		foreach( layer layer_ls
+			layer_id = axlLayerGet( layer)
+			unless( layer_id
+				printf( "ERROR: DeleteLayer() - Fail to get layer id: %s\n" layer)
+				return( nil)
+			)
+			
+			obj_ls = GetAll_utilityprogram( layer)
+			axlDeleteObject( obj_ls)
+			axlDeleteObject( layer_id)
+		)
+		
+		return( t)
 	)
 )
 
@@ -997,6 +1031,14 @@ procedure( GetSymbolList_utilityprogram( layer)
 	)
 )
 
+procedure( GetAll_utilityprogram( layer)
+	prog( ( obj_ls)
+		obj_ls = GetFindFilter_utilityprogram( layer nil)
+		obj_ls = setof( x obj_ls equal( x->layer layer))
+		return( obj_ls)
+	)
+)
+
 procedure( GetFindFilter_utilityprogram( layer filter)
 	prog( ( visible_list selected)
 		visible_list = axlVisibleGet()
@@ -1021,7 +1063,11 @@ procedure( GetFindFilter_utilityprogram( layer filter)
 
 procedure( SetFindFilter_utilityprogram( filter)
 	prog( ()
-		filter = append( '(noall) filter)
+		if( filter
+			filter = append( '(noall) filter)
+			filter = '(all)
+		)
+		
 		return( axlSetFindFilter( ?enabled filter ?onButtons filter))
 	)
 )
@@ -1078,7 +1124,7 @@ procedure( NewForm_utilityprogram( file_name header port_width port_height @opti
 		)
 		
 		fprintf( out_port "FILE_TYPE=FORM_DEFN VERSION=1\n")
-		fprintf( out_port "FORM WINDOW\n")
+		fprintf( out_port "FORM TOOLWINDOW\n")
 		fprintf( out_port "FIXED\n")
 		fprintf( out_port "PORT %d %d\n" port_width port_height)
 		fprintf( out_port "HEADER \"%s\"\n" header)
@@ -1189,6 +1235,17 @@ procedure( WriteFormRealFillin_utilityprogram( out_port field x y width field_le
 			fprintf( out_port "INFO_ONLY\n")
 		)
 		
+		fprintf( out_port "ENDFIELD\n")
+	)
+)
+
+procedure( WriteFormThumbnail_utilityprogram( out_port field x y width height)
+	let( ()
+		fprintf( out_port "FIELD %sPicture\n" field)
+		fprintf( out_port "THUMBNAIL %s\n" field)
+		fprintf( out_port "OPTIONS %s\n" "stretch")
+		fprintf( out_port "FLOC %d %d\n" x y)
+		fprintf( out_port "FSIZE %d %d\n" width height)
 		fprintf( out_port "ENDFIELD\n")
 	)
 )
@@ -1332,7 +1389,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v3d2.il" "c:/skill/utility_program_v3d2.ile")
-(load "utility_program_v3d2.il")
-(load "utility_program_v3d2.ile")
+(encrypt "c:/skill/utility_program_v3d3.il" "c:/skill/utility_program_v3d3.ile")
+(load "utility_program_v3d3.il")
+(load "utility_program_v3d3.ile")
 */
