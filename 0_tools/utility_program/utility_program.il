@@ -560,6 +560,16 @@ procedure( GetLogSeperator_utilityprogram( @optional (title "") (total_length 12
 	)
 )
 
+procedure( CreateShapeByPoints_utilityprogram( points layer)
+	prog( ( path shape)
+		; add the first point to complete the shape
+		path = axlPathStart( append1( points car( points)))
+		shape = car( axlDBCreateShape( path t layer))
+		
+		return( shape)
+	)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
@@ -1084,7 +1094,7 @@ procedure( ParseFormPopupOption_utilityprogram( option_ls)
 	)
 )
 
-procedure( WriteFormGrid_utilityprogram( out_port field x y width height @optional ( top_size 2) ( side_size 5))
+procedure( WriteFormGrid_utilityprogram( out_port field x y width height @key ( top_size 2) ( side_size 5))
 	let( ()
 		fprintf( out_port "GRID %s\n" field)
 		fprintf( out_port "FLOC %d %d\n" x y)
