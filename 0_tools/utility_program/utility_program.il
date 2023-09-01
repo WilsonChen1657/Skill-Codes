@@ -528,6 +528,21 @@ procedure( ZoomIn_utilityprogram( xy @optional (tolerance 100))
 	)
 )
 
+procedure( SumList_utilityprogram( numbers)
+	let( ()
+		apply( 'plus 0 0 numbers)
+	)
+)
+
+procedure( RunReport_utilityprogram( cmd_format @optional (on_html nil))
+	; cmd_format = %CDSROOT%\share\pcb\batchhelp\report.txt
+	let( ( html_option cmd)
+		html_option = if( on_html " -H" "")
+		sprintf( cmd "report -v%s %s %%s" html_option cmd_format)
+		axlRunBatchDBProgram( "report" cmd ?silent t)
+	)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
@@ -991,11 +1006,11 @@ procedure( WriteFormRealFillin_utilityprogram( out_port field x y width field_le
 		fprintf( out_port "REALFILLIN %d %d\n" width field_length)
 		fprintf( out_port "DECIMAL %d\n" decimal)
 		when( min
-			fprintf( out_port "MIN %d\n" min)
+			fprintf( out_port "MIN %f\n" min)
 		)
 		
 		when( max
-			fprintf( out_port "MAX %d\n" max)
+			fprintf( out_port "MAX %f\n" max)
 		)
 		
 		fprintf( out_port "ENDFIELD\n")
