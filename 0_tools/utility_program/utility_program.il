@@ -11,9 +11,9 @@
 */
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Global Variable
+setq( _wilson_init_flag t)
 setq( _allegro_version axlVersion( 'version))
-setq( _allegro_unit car( axlDBGetDesignUnits()))
-setq( _allegro_path getWorkingDir())
+setq( _allegro_unit nil)
 setq( _skill_package_path "W:/footprint_building_aid_skill/1-0_skill_package/")
 
 setq( _month_ls list( nil "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
@@ -1235,7 +1235,7 @@ procedure( CreateMessageBox_utilityprogram( msg title @optional ( button_info_ls
 )
 
 procedure( MessageBoxFormActions_utilityprogram( form)
-	prog( ( cur_field)
+	prog( ()
 		unless( axlIsFormType( form)
 			println( "ArgErr: FormActions() - form_id is not in form type")
 			return( nil)
@@ -1253,7 +1253,7 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
 
 /*
-(encrypt "c:/skill/utility_program_v2d8.il" "c:/skill/utility_program_v2d8.ile")
-(load "utility_program_v2d8.il")
-(load "utility_program_v2d8.ile")
+(encrypt "c:/skill/utility_program_v2d9.il" "c:/skill/utility_program_v2d9.ile")
+(load "utility_program_v2d9.il")
+(load "utility_program_v2d9.ile")
 */
