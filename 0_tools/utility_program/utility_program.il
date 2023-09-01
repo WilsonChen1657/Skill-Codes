@@ -528,7 +528,7 @@ procedure( ZoomIn_utilityprogram( xy @optional (tolerance 100))
 	)
 )
 
-procedure( SumList_utilityprogram( numbers)
+procedure( SumNumbers_utilityprogram( numbers)
 	let( ()
 		apply( 'plus 0 0 numbers)
 	)
@@ -540,6 +540,23 @@ procedure( RunReport_utilityprogram( cmd_format @optional (on_html nil))
 		html_option = if( on_html " -H" "")
 		sprintf( cmd "report -v%s %s %%s" html_option cmd_format)
 		axlRunBatchDBProgram( "report" cmd ?silent t)
+	)
+)
+
+
+procedure( GetLogSeperator_utilityprogram( @optional (title "") (total_length 120))
+	let( ( line_count seperator)
+		unless( blankstrp( title)
+			sprintf( title " %s " title)
+		)
+		
+		line_count = total_length - length( title)
+		seperator = ""
+		for( i 1 (line_count / 2)
+			seperator = strcat( seperator "=")
+		)
+		
+		sprintf( seperator "%s%s%s\n" seperator title seperator)
 	)
 )
 
