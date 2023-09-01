@@ -500,6 +500,34 @@ procedure( UpdateMeter_utilityprogram( meter_count meter_total @optional (info_s
 	)
 )
 
+procedure( HighLightObject_utilityprogram( obj_ls @key (color 5))
+	let( ()
+		; only "Groups" "Symbols" "Functions" "Nets" "Pins" "Vias" "Fingers" "DRC errors" can permanent highlight
+		perm_highlight_ls = setof( x obj_ls member( x->objType list( "symbol" "net" "pin" "via")))
+		temp_highlight_ls = setof( x obj_ls !member( x perm_highlight_ls))
+		
+		axlDBControl( 'highlightColor color)
+		axlHighlightObject( perm_highlight_ls t)
+		axlHighlightObject( temp_highlight_ls)
+	)
+)
+
+procedure( ZoomIn_utilityprogram( xy box @optional (tolerance 100))
+	let( ( target_box zoom_box)
+		axlZoomFit( 0)
+		axlZoomCenter( nil xy)
+		
+		target_box = list( axlMXYAdd( nth( 0 box) -tolerance:-tolerance) axlMXYAdd( nth( 1 box) tolerance:tolerance))
+		zoom_box = axlZoomBbox( nil)
+		while( !axlIsPointInsideBox( nth( 0 zoom_box) target_box) && !axlIsPointInsideBox( nth( 1 zoom_box) target_box)
+			axlZoomInOut( 0 1 xy)
+			zoom_box = axlZoomBbox( nil)
+		)
+		
+		axlZoomInOut( 0 -3 xy)
+	)
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
