@@ -825,7 +825,7 @@ procedure( ResetFindFilter_utilityprogram()
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Log
 
-procedure( SetUpLog_utilityprogram( log_name)
+procedure( SetUpLog_utilityprogram( log_name @key (mode "w") (log_time nil))
 	prog( ( log_dir year month date hour minute second log_file_name log_path out_port)	
 		unless( axlGetVariable( "ads_sdlog")
 			axlSetVariable( "ads_sdlog" "log")
@@ -836,12 +836,15 @@ procedure( SetUpLog_utilityprogram( log_name)
 			createDir( log_dir)
 		)
 		
-		sscanf( getCurrentTime() "%s %d %d:%d:%d %d" month date hour minute second year)
-		sprintf( log_file_name "%s-%.4d%s%.2d-%.2d%.2d%.2d.log" log_name year month date hour minute second)
+		if( mode == "a" && log_time
+			sscanf( log_time "%s %d %d:%d:%d %d" month date hour minute second year)
+			sscanf( getCurrentTime() "%s %d %d:%d:%d %d" month date hour minute second year)
+		)
 		
+		sprintf( log_file_name "%s-%.4d%s%.2d-%.2d%.2d%.2d.log" log_name year month date hour minute second)
 		sprintf( log_path "%s/%s" log_dir log_file_name)
 		
-		out_port = outfile( log_path "w")
+		out_port = outfile( log_path mode)
 		unless( outportp( out_port)
 			println( "ERROR: Main() - Fail to write log")
 			return( nil)
