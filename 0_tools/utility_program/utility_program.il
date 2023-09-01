@@ -10,7 +10,7 @@
 ################################################################################
 */
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Global Variable
+;region Global Variable
 setq( _wilson_init_flag t)
 setq( _allegro_version axlVersion( 'version))
 setq( _allegro_unit nil)
@@ -23,9 +23,9 @@ setq( _skill_package_path strcat( _flex_host_dir "footprint_building_aid_skill/o
 setq( _month_ls list( nil "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
 setq( _alphabet_total 26)
 setq( _alphabet_ls list( nil 'A 'B 'C 'D 'E 'F 'G 'H 'I 'J 'K 'L 'M 'N 'O 'P 'Q 'R 'S 'T 'U 'V 'W 'X 'Y 'Z))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Global Variable
+;endregion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Function
+;region Function
 
 procedure( Trim_utilityprogram( str @optional (target " "))
 	prog( ( tmp)
@@ -780,9 +780,9 @@ procedure( _AcDesignEvent( out_form)
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
+;endregion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Parse datetime
+;region Parse datetime
 ;;; parse yyyyMMdd to Dec 28 16:57:06 1996
 procedure( ParseDate_utilityprogram( date_str)
 	prog( ( year month day month_v month_str base_time)
@@ -825,9 +825,9 @@ procedure( ParseDateTimeStrToFormat_utilityprogram( date_time_str)
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Parse datetime
+;endregion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Output CSV
+;region Output CSV
 
 procedure( OutputCSV_utilityprogram( csv_filename cell_table)
 	prog( ( out_port key_ls max_row max_col row col csv_line_ls csv_ls csv_line char cell )
@@ -1033,9 +1033,9 @@ procedure( GetNumberByAlphabet_utilityprogram( word)
 		return( result)
 	)
 )
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Output CSV
+;endregion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Find Filter
+;region Find Filter
 
 procedure( GetTextList_utilityprogram( layer)
 	prog( ( text_ls)
@@ -1140,9 +1140,9 @@ procedure( ResetFindFilter_utilityprogram()
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Find filter
+;endregion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Log
+;region Log
 
 procedure( SetUpLog_utilityprogram( log_name @key (mode "w") (log_time nil))
 	prog( ( log_dir year month date hour minute second log_file_name log_path out_port)	
@@ -1173,9 +1173,9 @@ procedure( SetUpLog_utilityprogram( log_name @key (mode "w") (log_time nil))
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Log
+;endregion
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Form
+;region Form
 
 procedure( NewForm_utilityprogram( file_name header port_width port_height @optional (start_title t))
 	prog( ( out_port)
@@ -1522,10 +1522,114 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 		return( t)
 	)
 )
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Form
+;endregion
+
+;region XML
+
+procedure( GetXmlSections_utilityprogram( element file_addr)
+	prog( (in_port header tailer start_getting sect_ls)
+		unless( stringp( element)
+			println( "ArgErr: GetXmlSections() - element is not a string")
+			return( nil)
+		)
+		unless( isFile( file_addr)
+			println( "ArgErr: GetXmlSections() - file_addr is not a file")
+			return( nil)
+		)
+		unless( inportp( in_port = infile( file_addr))
+			println( "Error: GetXmlSections() - fail to read file")
+			return( nil)
+		)
+		
+		; file_addr = "D:/Footprint_Check/self_create/351_derek/ic_sdram-ddr4_78p_mt40a1g8.xml"
+		sprintf( header "<%s>" element)
+		sprintf( tailer "</%s>" element)
+		stack_line = ""
+		while( stringp( gets( line in_port))
+			when( and( start_getting index( line tailer))
+				line = strcat( "<" car( parseString( cadr( parseString( line "<")) ">")) ">")
+				stack_line = strcat( stack_line line)
+				sect_ls = append1( sect_ls stack_line)
+				stack_line = ""
+				start_getting = nil
+			)
+
+			when( start_getting
+				line = strcat( "<" car( parseString( cadr( parseString( line "<")) ">")) ">")
+				stack_line = strcat( stack_line line)
+			)
+
+			when( and( null( start_getting) index( line header))
+				line = strcat( "<" car( parseString( cadr( parseString( line "<")) ">")) ">")
+				stack_line = line
+				start_getting = t
+			)
+		)
+		
+		close( in_port)
+		return( sect_ls)
+	)
+)
+
+procedure( GetXmlContent_utilityprogram( section element)
+	;;; the format of the xml:
+	;;;		section: <element>content<element/>
+	prog( (sect_ls content)
+		unless( stringp( section)
+			println( "ArgErr: GetXmlContent() - section is not a string")
+			return( nil)
+		)
+		unless( stringp( element)
+			println( "ArgErr: GetXmlContent() - element is not a string")
+			return( nil)
+		)
+		unless( index( section element)
+			println( "ArgErr: GetXmlContent() - element is not in section")
+			return( nil)
+		)
+		unless( ((strlen( element) * 2) < strlen( section))
+			println( "ArgErr: GetXmlContent() - length of section has to be larger than elements twice")
+			return( nil)
+		)
+		
+		;;; get the content between 2 element
+		sect_ls = parseString( section "<>")
+		sect_ls = cdr( exists( x sect_ls index( x element)))
+		sect_ls = reverse( cdr( exists( x reverse( sect_ls) index( x element))))
+		content = strcat( "<" buildString( sect_ls "><") ">")
+		return( content)
+	)
+)
+
+procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
+	prog( (attribute_pattern val)
+		unless( stringp( section)
+			println( "ArgErr: GetXmlAttribute() - section is not a string")
+			return( nil)
+		)
+		unless( stringp( key)
+			println( "ArgErr: GetXmlAttribute() - key is not a string")
+			return( nil)
+		)
+		unless( index( section key)
+			println( "ArgErr: GetXmlAttribute() - key is not in section")
+			return( nil)
+		)
+		
+		sprintf( attribute_pattern "%s=\"\\(%s\\)\" " key pattern)
+		rexCompile( attribute_pattern)
+		when( rexExecute( section)
+			val = rexSubstitute( "\\1")
+		)
+		
+		return( val)
+	)
+)
+
+;endregion
 
 /*
-(encrypt "c:/skill/utility_program_v3d5.il" "c:/skill/utility_program_v3d5.ile")
-(load "utility_program_v3d5.il")
-(load "utility_program_v3d5.ile")
+(encrypt "c:/skill/utility_program_v3d6.il" "c:/skill/utility_program_v3d6.ile")
+(load "utility_program_v3d6.il")
+(load "utility_program_v3d6.ile")
 */
