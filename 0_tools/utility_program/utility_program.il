@@ -500,7 +500,7 @@ procedure( UpdateMeter_utilityprogram( meter_count meter_total @optional (info_s
 	)
 )
 
-procedure( HighLightObject_utilityprogram( obj_ls @key (color 5))
+procedure( HighLightObject_utilityprogram( obj_ls @key (color 1))
 	let( ()
 		; only "Groups" "Symbols" "Functions" "Nets" "Pins" "Vias" "Fingers" "DRC errors" can permanent highlight
 		perm_highlight_ls = setof( x obj_ls member( x->objType list( "symbol" "net" "pin" "via")))
@@ -512,12 +512,12 @@ procedure( HighLightObject_utilityprogram( obj_ls @key (color 5))
 	)
 )
 
-procedure( ZoomIn_utilityprogram( xy box @optional (tolerance 100))
+procedure( ZoomIn_utilityprogram( xy @optional (tolerance 100))
 	let( ( target_box zoom_box)
 		axlZoomFit( 0)
 		axlZoomCenter( nil xy)
 		
-		target_box = list( axlMXYAdd( nth( 0 box) -tolerance:-tolerance) axlMXYAdd( nth( 1 box) tolerance:tolerance))
+		target_box = list( axlMXYAdd( xy -tolerance:-tolerance) axlMXYAdd( xy tolerance:tolerance))
 		zoom_box = axlZoomBbox( nil)
 		while( !axlIsPointInsideBox( nth( 0 zoom_box) target_box) && !axlIsPointInsideBox( nth( 1 zoom_box) target_box)
 			axlZoomInOut( 0 1 xy)
