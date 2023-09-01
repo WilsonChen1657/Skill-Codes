@@ -160,25 +160,25 @@ procedure( ReadCSVLine_utilityprogram( csv_filename @optional (skip_row 1))
 )
 
 procedure( ReadTable_utilityprogram( table_filename table_name)
-	prog( ( in_port table)
+	prog( ( msg_title in_port table)
+		msg_title = "ReadTable()"
 		unless( symbolp( table_name)
-			println( "ArgErr: ReadTable() - table_name is not a symbol")
+			PrintMsg_utilityprogram( "table_name is not a symbol" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		unless( stringp( table_filename)
-			println( "ArgErr: ReadTable() - table_filename is not a string")
+			PrintMsg_utilityprogram( "table_filename is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		unless( isFile( table_filename)
-			println( "ArgErr: ReadTable() - table_filename is not a file")
+			PrintMsg_utilityprogram( "table_filename is not a file" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
-		in_port = infile( table_filename)
-		unless( inportp( in_port)
-			println( "ArgErr: ReadTable() - Fail to read table_filename")
+		unless( inportp( in_port = infile( table_filename))
+			PrintMsg_utilityprogram( "Fail to read table_filename" ?title msg_title ?level 'error)
 			return( nil)
 		)
 
@@ -194,7 +194,8 @@ procedure( ReadTable_utilityprogram( table_filename table_name)
 					key = substring( key 2 ( strlen( key) - 2))
 					table[ key] = val
 				else
-					printf( "WARNING: ReadTable() - Fail to manipulate data_line[%s] in [%s]\n" data_line table_filename)
+					sprintf( msg "Fail to manipulate data_line[%s] in [%s]\n" data_line table_filename)
+					PrintMsg_utilityprogram( msg ?title msg_title ?level 'warn)
 				)
 			)
 		)
@@ -345,13 +346,11 @@ procedure( CheckDataType_utilityprogram( data type err_msg)
 			)
 			( 'num_unit
 				rexCompile( "^\\([0-9]+\\) \\([a-zA-Z]+\\)$")
-				
 				when( rexExecute( data)
 					num = rexSubstitute( "\\1")
 					unit = rexSubstitute( "\\2")
 				)
 				
-				;;
 				if( and( stringp( num) stringp( unit) plusp( atoi( num)) member( upperCase( unit) unit_ls)) then
 					result = data
 				else
@@ -420,7 +419,8 @@ procedure( CheckDataType_utilityprogram( data type err_msg)
 				axlPurgePadstacks( 'via nil)
 			)
 			( t
-				printf( "ERROR: correct_data_type() - Yet to support type[%s] to identify data[%s]\n" type data)
+				sprintf( msg "Yet to support type[%s] to identify data[%s]\n" type data)
+				PrintMsg_utilityprogram( msg ?title "CheckDataType()" ?level 'error)
 				result = nil
 			)
 		)
@@ -440,8 +440,10 @@ procedure( GetLatestFileAddr_utilityprogram( directory filename_pattern)
 				date_file_ls = append1( date_file_ls list( date file_name))
 			)
 		)
+
 		unless( dtpr( date_file_ls)
-			printf( "ERROR: Fail to find file at %s%s\n" directory filename_pattern)
+			sprintf( msg "Fail to find file at %s%s\n" directory filename_pattern)
+			PrintMsg_utilityprogram( msg ?title "GetLatestFileAddr()" ?level 'error)
 			return( nil)
 		)
 		
@@ -464,7 +466,8 @@ procedure( RemoveDuplicate_utilityprogram( data_ls)
 procedure( CheckIsCallable_utilityprogram( function_name file_name)
 	prog( ()
 		unless( isCallable( function_name)
-			printf( "Please load [%s] to proceed\n" file_name)
+			sprintf( msg "Please load [%s] to proceed\n" file_name)
+			PrintMsg_utilityprogram( msg ?title "CheckIsCallable()" ?level 'error)
 			return( nil)
 		)
 		
@@ -516,7 +519,7 @@ procedure( UpdateMeter_utilityprogram( meter_count meter_total @optional (info_s
 )
 
 procedure( HighLightObject_utilityprogram( obj_ls @key (color 1))
-	let( ()
+	let( ( perm_highlight_ls temp_highlight_ls)
 		; only "Groups" "Symbols" "Functions" "Nets" "Pins" "Vias" "Fingers" "DRC errors" can permanent highlight
 		perm_highlight_ls = setof( x obj_ls member( x->objType list( "symbol" "net" "pin" "via")))
 		temp_highlight_ls = setof( x obj_ls !member( x perm_highlight_ls))
@@ -579,7 +582,6 @@ procedure( CreateShapeByPoints_utilityprogram( points layer)
 		; add the first point to complete the shape
 		path = axlPathStart( append1( points car( points)))
 		shape = car( axlDBCreateShape( path t layer))
-		
 		return( shape)
 	)
 )
@@ -693,19 +695,22 @@ procedure( SelectObjectByUser_utilityprogram( filter @key (prompt nil))
 
 procedure( DeleteLayer_utilityprogram( layer_ls)
 	prog( ( layer_id_ls)
+		msg_title = "DeleteLayer()"
 		when( and( layer_ls !dtpr( layer_ls))
 			layer_ls = list( layer_ls)
 		)
 		
 		unless( forall( x layer_ls axlIsLayer( x))
-			println( "ArgErr: DeleteLayer() - \"%L\" not layer" layer_ls)
+			sprintf( msg "\"%L\" not layer" layer_ls)
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		foreach( layer layer_ls
 			layer_id = axlLayerGet( layer)
 			unless( layer_id
-				printf( "ERROR: DeleteLayer() - Fail to get layer id: %s\n" layer)
+				sprintf( msg "Fail to get layer id: %s" layer)
+				PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
 				return( nil)
 			)
 			
@@ -780,6 +785,18 @@ procedure( _AcDesignEvent( out_form)
 	)
 )
 
+procedure( PrintMsg_utilityprogram( msg @key (title "") (level 'info))
+	let( ( (title_str "") level_str)
+		unless( blankstrp( title)
+			title_str = strcat( title " - ")	
+		)
+
+		level_str = upperCase( symbolToString( level))
+		printf( strcat( "*" level_str "* " title_str msg "\n"))
+		axlUIConfirm( msg level)
+	)
+)
+
 ;endregion
 
 ;region Parse datetime
@@ -787,7 +804,7 @@ procedure( _AcDesignEvent( out_form)
 procedure( ParseDate_utilityprogram( date_str)
 	prog( ( year month day month_v month_str base_time)
 		unless( strlen( date_str) == 8
-			println( "ERROR: Date format incorrect !! yyyyMMdd")
+			PrintMsg_utilityprogram( "Date format should be \"yyyyMMdd\"" ?title "ParseDate()" ?level 'error)
 			return( nil)
 		)
 		
@@ -831,13 +848,14 @@ procedure( ParseDateTimeStrToFormat_utilityprogram( date_time_str)
 
 procedure( OutputCSV_utilityprogram( csv_filename cell_table)
 	prog( ( out_port key_ls max_row max_col row col csv_line_ls csv_ls csv_line char cell )
+		msg_title = "OutputCSV()"
 		unless( stringp( csv_filename) 
-			println( "ArgErr: output_csv() - csv_filename is not a string") 
+			PrintMsg_utilityprogram( "csv_filename is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		unless( tablep( cell_table) 
-			println( "ArgErr: output_csv() - cell_table is not a table") 
+			PrintMsg_utilityprogram( "cell_table is not a table" ?title msg_title ?level 'error)
 			return( nil)
 		)
 
@@ -884,7 +902,7 @@ procedure( OutputCSV_utilityprogram( csv_filename cell_table)
 		
 		out_port = outfile( csv_filename "w")
 		unless( outportp( out_port) 
-			println( "ERROR: output_csv() - Fail to write file") 
+			PrintMsg_utilityprogram( "Fail to write file" ?title "OutputCSV()" ?level 'error)
 			return( nil)
 		)
 		
@@ -899,13 +917,14 @@ procedure( OutputCSV_utilityprogram( csv_filename cell_table)
 
 procedure( GetMaxRow_utilityprogram( key_ls)
 	prog( ( row max_row)
+		msg_title = "GetMaxRow()"
 		unless( dtpr( key_ls) 
-			println( "ArgErr: get_max_row_from_table() - key_ls is not a dtpr") 
+			PrintMsg_utilityprogram( "key_ls is not a dtpr" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		unless( forall( k key_ls stringp( k)) 
-			println( "ArgErr: get_max_row_from_table() - key_ls is not a string list") 
+			PrintMsg_utilityprogram( "key_ls is not a string list" ?title msg_title ?level 'error)
 			return( nil)
 		)
 
@@ -932,13 +951,14 @@ procedure( GetMaxRow_utilityprogram( key_ls)
 
 procedure( GetMaxCol_utilityprogram( key_ls)
 	prog( ( col char max_col)
+		msg_title = "GetMaxRow()"
 		unless( dtpr( key_ls) 
-			println( "ArgErr: get_max_col_from_table() - key_ls is not a dtpr") 
+			PrintMsg_utilityprogram( "key_ls is not a dtpr" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		unless( forall( k key_ls stringp( k)) 
-			println( "ArgErr: get_max_col_from_table() - key_ls is not a string list") 
+			PrintMsg_utilityprogram( "key_ls is not a string list" ?title msg_title ?level 'error)
 			return( nil)
 		)
 
@@ -970,8 +990,9 @@ procedure( GetMaxCol_utilityprogram( key_ls)
 
 procedure( GetAlphabetByNumber_utilityprogram( number)
 	prog( ( left right result)
+		msg_title = "GetAlphabetByNumber()"
 		unless( and( plusp( number) integerp( number)) 
-			println( "ArgErr: get_alphabet_by_number() - Number is not a plus integer") 
+			PrintMsg_utilityprogram( "Number is not a plus integer" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -980,7 +1001,8 @@ procedure( GetAlphabetByNumber_utilityprogram( number)
 			right = remainder( number _alphabet_total)
 			cond(
 				( (left > _alphabet_total)
-					printf( "ERROR: get_alphabet_by_number() - Fail to define number[%d]\n" number)
+					sprintf( msg "Fail to define number[%d]" number)
+					PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
 					return( nil)
 				)
 				( zerop( right)
@@ -1005,8 +1027,9 @@ procedure( GetAlphabetByNumber_utilityprogram( number)
 
 procedure( GetNumberByAlphabet_utilityprogram( word)
 	prog( ( str_len left right result)
+		msg_title = "GetAlphabetByNumber()"
 		unless( or( stringp( word) symbolp( word)) 
-			println( "ArgErr: get_number_by_alphabet() - word is not a symbol or string") 
+			PrintMsg_utilityprogram( "word is not a symbol or string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -1015,8 +1038,9 @@ procedure( GetNumberByAlphabet_utilityprogram( word)
 		)
 		
 		str_len = strlen( word)
-		when( (str_len > 2) 
-			printf( "ArgErr: get_number_by_alphabet() - length of word[%s] has to be less equal than 2\n" word) 
+		when( str_len > 2
+			sprintf( msg "length of word[%s] has to be less equal than 2" word)
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -1093,22 +1117,32 @@ procedure( GetSymbolList_utilityprogram( layer)
 	)
 )
 
-procedure( GetAll_utilityprogram( layer)
+procedure( GetAll_utilityprogram( layer_ls)
 	prog( ( obj_ls)
+		unless( dtpr( layer_ls)
+			layer_ls = list( layer_ls)
+		)
+
 		obj_ls = GetFindFilter_utilityprogram( layer nil)
-		obj_ls = setof( x obj_ls equal( x->layer layer))
+		obj_ls = setof( x obj_ls member( x->layer layer_ls))
 		return( obj_ls)
 	)
 )
 
-procedure( GetFindFilter_utilityprogram( layer filter)
+procedure( GetFindFilter_utilityprogram( layer_ls filter)
 	prog( ( visible_list selected)
 		visible_list = axlVisibleGet()
 		axlVisibleDesign( nil)
-		axlVisibleLayer( layer t)
-		when( filter == '(vias)
-			subclass = cadr( parseString( layer "/"))
-			axlVisibleLayer( strcat( "VIA CLASS/" subclass) t)
+		unless( dtpr( layer_ls)
+			layer_ls = list( layer_ls)
+		)
+		
+		foreach( layer layer_ls
+			axlVisibleLayer( layer t)
+			when( filter == '(vias)
+				subclass = cadr( parseString( layer "/"))
+				axlVisibleLayer( strcat( "VIA CLASS/" subclass) t)
+			)
 		)
 		
 		SetFindFilter_utilityprogram( filter)
@@ -1165,7 +1199,7 @@ procedure( SetUpLog_utilityprogram( log_name @key (mode "w") (log_time nil))
 		
 		out_port = outfile( log_path mode)
 		unless( outportp( out_port)
-			println( "ERROR: Main() - Fail to write log")
+			PrintMsg_utilityprogram( "Fail to write log" ?title "SetUpLog()" ?level 'error)
 			return( nil)
 		)
 		
@@ -1181,7 +1215,7 @@ procedure( NewForm_utilityprogram( file_name header port_width port_height @opti
 	prog( ( out_port)
 		out_port = outfile( file_name "w")
 		unless( outportp( out_port)
-			println( "ERROR: NewForm_utilityprogram() - Fail to write form")
+			PrintMsg_utilityprogram( "Fail to write form" ?title "NewForm()" ?level 'error)
 			return( nil)
 		)
 		
@@ -1522,22 +1556,24 @@ procedure( MessageBoxFormActions_utilityprogram( form)
 		return( t)
 	)
 )
+
 ;endregion
 
 ;region XML
 
 procedure( GetXmlSections_utilityprogram( element file_addr)
 	prog( (in_port header tailer start_getting sect_ls)
+		msg_title = "GetXmlSections()"
 		unless( stringp( element)
-			println( "ArgErr: GetXmlSections() - element is not a string")
+			PrintMsg_utilityprogram( "element is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( isFile( file_addr)
-			println( "ArgErr: GetXmlSections() - file_addr is not a file")
+			PrintMsg_utilityprogram( "file_addr is not a file" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( inportp( in_port = infile( file_addr))
-			println( "Error: GetXmlSections() - fail to read file")
+			PrintMsg_utilityprogram( "Fail to read file" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -1575,20 +1611,21 @@ procedure( GetXmlContent_utilityprogram( section element)
 	;;; the format of the xml:
 	;;;		section: <element>content<element/>
 	prog( (sect_ls content)
+		msg_title = "GetXmlContent()"
 		unless( stringp( section)
-			println( "ArgErr: GetXmlContent() - section is not a string")
+			PrintMsg_utilityprogram( "section is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( stringp( element)
-			println( "ArgErr: GetXmlContent() - element is not a string")
+			PrintMsg_utilityprogram( "element is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( index( section element)
-			println( "ArgErr: GetXmlContent() - element is not in section")
+			PrintMsg_utilityprogram( "element is not in section" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( ((strlen( element) * 2) < strlen( section))
-			println( "ArgErr: GetXmlContent() - length of section has to be larger than elements twice")
+			PrintMsg_utilityprogram( "Length of section has to be larger than elements twice" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -1603,16 +1640,17 @@ procedure( GetXmlContent_utilityprogram( section element)
 
 procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 	prog( (attribute_pattern val)
+		msg_title = "GetXmlAttribute()"
 		unless( stringp( section)
-			println( "ArgErr: GetXmlAttribute() - section is not a string")
+			PrintMsg_utilityprogram( "section is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( stringp( key)
-			println( "ArgErr: GetXmlAttribute() - key is not a string")
+			PrintMsg_utilityprogram( "key is not a string" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		unless( index( section key)
-			println( "ArgErr: GetXmlAttribute() - key is not in section")
+			PrintMsg_utilityprogram( "key is not in section" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -1628,8 +1666,331 @@ procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 
 ;endregion
 
+;region PCB control form
+
+procedure( InitFrame_utilityprogram()
+	let( ( width_height)
+		setq( _line_width GetUnitValueByMils_utilityprogram( 20))
+		setq( _hor_width GetUnitValueByMils_utilityprogram( 4120))
+		setq( _hor_height GetUnitValueByMils_utilityprogram( 340))
+		setq( _ver_height GetUnitValueByMils_utilityprogram( 6053))
+		setq( _ver_width _hor_height)
+		setq( _layer_bg_frame "BOARD GEOMETRY/FRAME")
+		setq( _layer_bg_logo "BOARD GEOMETRY/LOGO")
+		setq( _layer_bg_logo_m "BOARD GEOMETRY/LOGO_MIRROR")
+		setq( _layer_bg_bf "BOARD GEOMETRY/BOARD_FORM")
+		setq( _layer_bg_bf_m "BOARD GEOMETRY/BOARD_FORM_MIRROR")
+		setq( _layer_bg_bfk "BOARD GEOMETRY/BOARD_FORM_KEY")
+		setq( _layer_bg_bfk_m "BOARD GEOMETRY/BOARD_FORM_KEY_MIRROR")
+		setq( _layer_bg_an "BOARD GEOMETRY/ASSEMBLY_NOTES")
+		setq( _layer_bg_do "BOARD GEOMETRY/DESIGN_OUTLINE")
+		setq( _layer_df_pcb_fab "DRAWING FORMAT/PCB_FAB")
+		setq( _layer_df_panel "DRAWING FORMAT/PANEL")
+		setq( _layer_df_pcba_top "DRAWING FORMAT/PCBA_TOP")
+		setq( _layer_df_pcba_bot "DRAWING FORMAT/PCBA_BOT")
+
+		
+		setq( _A_size_ls list( "A0" "A1" "A2" "A3"))
+		setq( _A_size_table makeTable( 'A_type nil))
+		width_height = list( 841 1189)
+		foreach( size _A_size_ls
+			_A_size_table[ size] = width_height
+			width_height = list( round( cadr( width_height) / 2) car( width_height))
+		)
+
+		setq( _B_size_ls list( "B0" "B1" "B2" "B3"))
+		setq( _B_size_table makeTable( 'B_type nil))
+		width_height = list( 1000 1414)
+		foreach( size _B_size_ls
+			_B_size_table[ size] = width_height
+			width_height = list( round( cadr( width_height) / 2) car( width_height))
+		)
+	)
+)
+
+procedure( CreateFrame_utilityprogram( type)
+	let( ( layer_ls key_xy_ls obj_ls obj_ls_box hor ver hor_ver size sym_term sym_nm)
+		InitFrame_utilityprogram()
+		case( type
+			( 'PCB_FAB_PANEL
+				layer_ls = list( _layer_bg_an _layer_df_pcb_fab _layer_df_panel _layer_bg_logo)
+				baord_form_key_layer = _layer_bg_bfk
+			)
+			( 'PCBA_TOP
+				layer_ls = list( _layer_df_pcba_top _layer_bg_logo)
+				baord_form_key_layer = _layer_bg_bfk
+			)
+			( 'PCBA_BOT
+				layer_ls = list( _layer_df_pcba_bot _layer_bg_logo_m)
+				baord_form_key_layer = _layer_bg_bfk_m
+			)
+		)
+
+		key_xy_ls = GetTextList_utilityprogram( baord_form_key_layer)~>xy
+
+		layer_ls = append( layer_ls list( _layer_bg_do))
+		obj_ls = GetFindFilter_utilityprogram( layer_ls '(shapes lines text))
+		obj_ls = setof( x obj_ls !member( x->xy key_xy_ls))
+		obj_ls_box = axlDBGetExtents( obj_ls nil)
+		
+		hor = caadr( obj_ls_box) - caar( obj_ls_box)
+		ver = cadadr( obj_ls_box) - cadar( obj_ls_box)
+		; add board_form height (3080)
+		if( equal( _allegro_unit "mils")
+			hor_ver = list( axlMKSConvert( hor "MILS" "MM") axlMKSConvert( (ver + 3080) "MILS" "MM"))
+			hor_ver = list( hor (ver + GetUnitValueByMils_utilityprogram( 3080)))
+		)
+
+		hor_ver = sort( hor_ver 'lessp)
+
+		cond(
+			( eq( type 'PCB_FAB_PANEL)
+				size = GetSizeType_utilityprogram( 'B_type hor_ver)
+				sym_term = "panel_frame_"
+			)
+			( member( type '(PCBA_TOP PCBA_BOT))
+				size = GetSizeType_utilityprogram( 'A_type hor_ver)
+				sym_term = "pcba_frame_"
+			)
+		)
+
+		sym_nm = strcat( sym_term lowerCase( size))
+		CreateSymbol_utilityprogram( sym_nm ?center_xy (10000:0))
+
+		;axlVisibleLayer( layer t)
+	)
+)
+
+procedure( GetSizeType_utilityprogram( type obj_size)
+	let( ( size_ls size_table result_size)
+		case( type
+			( 'A_type
+				size_ls = reverse( _A_size_ls)
+				size_table = _A_size_table
+			)
+			( 'B_type
+				size_ls = reverse( _B_size_ls)
+				size_table = _B_size_table
+			)
+		)
+
+		result_size = nil
+		while( null( result_size)
+			size = car( size_ls)
+			width_height = sort( size_table[ size] 'lessp)
+			when( and( greaterp( ( car( width_height) * cadr( width_height)) ( car( obj_size) * cadr( obj_size))))
+				result_size = size
+			)
+
+			unless( equal( length( size_ls) 1)
+				size_ls = remq( size size_ls)
+			)
+		)
+
+		unless( result_size
+			result_size = car( size_ls)
+		)
+
+		result_size
+	)
+)
+
+procedure( CreateBoardForm_utilityprogram()
+	let( ()
+		CreateSymbol_utilityprogram( "pcba_board_form" ?check_term nil)
+		RelocateBoardForm_utilityprogram( 'PCB_FAB_PANEL)
+
+		RelocateBoardForm_utilityprogram( 'PCBA_TOP)
+		CreateSymbol_utilityprogram( "pcba_board_form_mirror" ?check_term nil)
+		RelocateBoardForm_utilityprogram( 'PCBA_BOT)
+
+		CreateSymbol_utilityprogram( "logo_form" ?center_xy (0:-500) ?check_term nil)
+
+	)
+)
+
+procedure( CreateSymbol_utilityprogram( sym_nm @key (center_xy (0:0)) (check_term t))
+	;; sym_nm = "flex_pcb_form_v1"
+	prog( ( title up_sym_term msg sym_ls to_create result)
+		msg_title = "CreateSymbol()"
+		unless( stringp( sym_nm)
+			PrintMsg_utilityprogram( "sym_nm is not a string" ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		unless( dtpr( center_xy)
+			PrintMsg_utilityprogram( "center_xy is not a dtpr" ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		to_create = t
+		if( check_term then
+			up_sym_term = upperCase( sym_nm)
+			up_sym_term = substring( up_sym_term 1 ( strlen( up_sym_term) - strlen( rindex( up_sym_term "_"))))
+			sym_ls = setof( x axlDBGetDesign()->symbols index( x->name up_sym_term))
+			sprintf( msg "Found symbols%L by term[%s] are loaded. Do you want to load [%s]?" sym_ls~>name up_sym_term sym_nm)
+		else
+			sym_ls = setof( x axlDBGetDesign()->symbols equal( upperCase( x->name) upperCase( sym_nm)))
+			sprintf( msg "Found %d symbols with same name. Do you want to reload [%s]?" length( sym_ls) sym_nm)
+		)
+
+		when( dtpr( sym_ls)
+			to_create = axlUIYesNo( msg "Reload Symbol" 'yes)
+			when( to_create
+				axlDeleteObject( sym_ls)
+			)
+		)
+
+		;;;; load target symbol from library
+		when( to_create
+			mode = '(shape ignoreFixed)
+			symbol_type_ls = list( "FORMAT" "PACKAGE" "MECHANICAL")
+			while( null( result)
+				sym_type = car( symbol_type_ls)
+				result = axlDBCloak( 'axlDBCreateSymbol( list( sym_nm sym_type) center_xy) mode)
+				printf( "INFO: %s - Create symbol[%s] by %s: %L\n" msg_title sym_nm sym_type result)
+				symbol_type_ls = remq( sym_type symbol_type_ls)
+			)
+			
+			axlVisibleUpdate( t)
+			if( result
+				printf( "Symbol [%s] created at %L\n" sym_nm center_xy)
+				PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
+			)
+		)
+		
+		when( dtpr( result)
+			result = car( result)
+		)
+		
+		return( result)
+	)
+)
+
+procedure( CreateLineByBox_utilityprogram( box layer)
+	let( ( left_bot right_top left_top right_bot path)
+		left_bot = nth( 0 box)
+		right_top = nth( 1 box)
+		left_top = list( nth( 0 left_bot) nth( 1 right_top))
+		right_bot = list( nth( 0 right_top) nth( 1 left_bot))
+		/*
+		top_point = axlMXYAdd( center_xy 0:radius)
+		right_point = axlMXYAdd( center_xy radius:0)
+		bot_point = axlMXYAdd( center_xy 0:-radius)
+		left_point = axlMXYAdd( center_xy -radius:0)
+		
+		path = axlPathStart( list( start_point))
+		axlPathLine( path, 0.0, 200:250)
+		*/
+
+		path = axlPathStart( list( left_bot left_top right_top right_bot left_bot) _line_width)
+		axlDBCreatePath( path layer)
+		
+	)
+)
+
+procedure( GreaterBox_utilityprogram( box_1 box_2)
+	let( ( result)
+		result = and( caar( box_2) >= caar( box_1)
+					cadar( box_2) >= cadar( box_1)
+					caadr( box_2) <= caadr( box_1)
+					cadadr( box_2) <= cadadr( box_1))
+		result
+	)
+)
+
+procedure( RelocateBoardForm_utilityprogram( type)
+	; PCB_FAB, PANEL use B serial paper size (B0 ~ B3)
+	; PCBA use A serial paper size (A0 ~ A3)
+	prog( ( gap frame_layer baord_form_layer baord_form_key_layer frame_box target_xy content_layer
+		obj_ls key_ls key_xy_ls content_ls obj_ls_box form_xy delta_x delta_y)
+		msg_title = "RelocateBoardForm()"
+		unless( member( type list( 'PCB_FAB_PANEL 'PCBA_TOP 'PCBA_BOT))
+			sprintf( msg "type should be one of %L" list( 'PCB_FAB 'PANEL 'PCBA_TOP 'PCBA_BOT))
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
+			return( nil)
+		)
+
+		unless( boundp( '_hor_height)
+			InitFrame_utilityprogram()
+		)
+		
+		cond(
+			( eq( type 'PCB_FAB_PANEL)
+				frame_layer = _layer_bg_frame
+				content_layer = list( _layer_df_pcb_fab _layer_df_panel)
+				baord_form_layer = _layer_bg_bf
+				baord_form_key_layer = _layer_bg_bfk
+			)
+			( member( type '(PCBA_TOP PCBA_BOT))
+				frame_layer = _layer_bg_frame
+				cond( 
+					( eq( type 'PCBA_TOP)
+						content_layer = _layer_df_pcba_top
+						baord_form_layer = _layer_bg_bf
+						baord_form_key_layer = _layer_bg_bfk
+					)
+					( eq( type 'PCBA_BOT)
+						content_layer = _layer_df_pcba_bot
+						baord_form_layer = _layer_bg_bf_m
+						baord_form_key_layer = _layer_bg_bfk_m
+					)
+				)
+			)
+		)
+
+		gap = _hor_height * 2
+		frame_box = axlDBGetExtents( GetLineList_utilityprogram( frame_layer) nil)
+		if( eq( type 'PCBA_BOT) then
+			target_xy = car( frame_box)
+			target_xy = axlMXYAdd( target_xy gap:gap)
+		else
+			target_xy = list( caadr( frame_box) cadar( frame_box))
+			target_xy = axlMXYAdd( target_xy -gap:gap)
+		)
+		
+		key_ls = GetTextList_utilityprogram( baord_form_key_layer)
+		v1_text_id = car( setof( x key_ls equal( x->text "[v1]")))
+		; board form symbol
+		sym_id = v1_text_id->parent
+
+		text_ls = GetTextList_utilityprogram( content_layer)
+		text_id = car( setof( x text_ls axlGeoPointsEqual( x->xy v1_text_id->xy)))
+
+		obj_ls = car( text_id->parentGroups)->groupMembers
+		unless( dtpr( obj_ls)
+			sprintf( msg "No group text found on %L, please check again!" content_layer)
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'warn)
+			;return( nil)
+		)
+
+		obj_ls = append1( obj_ls sym_id)
+		obj_ls_box = axlDBGetExtents( obj_ls nil)
+		if( eq( type 'PCBA_BOT)
+			form_xy = car( obj_ls_box)
+			form_xy = list( caadr( obj_ls_box) cadar( obj_ls_box))
+		)
+		
+		delta_x = xCoord( target_xy) - xCoord( form_xy)
+		delta_y = yCoord( target_xy) - yCoord( form_xy)
+
+		MoveObjects_utilityprogram( obj_ls list( delta_x delta_y))
+	)
+)
+
+procedure( MoveObjects_utilityprogram( obj_ls delta_xy)
+	let( ()
+		foreach( obj_id obj_ls
+			axlTransformObject( obj_id ?move delta_xy)
+			axlDBRefreshId( obj_id)		
+		)
+	)
+)
+
+;endregion
+
 /*
-(encrypt "c:/skill/utility_program_v3d6.il" "c:/skill/utility_program_v3d6.ile")
-(load "utility_program_v3d6.il")
-(load "utility_program_v3d6.ile")
+(encrypt "c:/skill/utility_program_v3d7.il" "c:/skill/utility_program_v3d7.ile")
+(load "utility_program_v3d7.il")
+(load "utility_program_v3d7.ile")
 */
