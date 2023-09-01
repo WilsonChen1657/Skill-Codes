@@ -210,7 +210,7 @@ procedure( GetTableValue_utilityprogram( table row col data_type)
 		sprintf( cell "%s%d" col row)
 		value = table[ cell]
 		
-		sprintf( err_msg "WARNING: GetDesignParamValue() - Fail to get value[%L] on row[%d] of sheet[Design_Param]" value row)
+		sprintf( err_msg "Fail to get value[%L] on row[%d] of sheet[Design_Param]" value row)
 		value = CheckDataType_utilityprogram( value data_type err_msg)
 		
 		return( value)
@@ -219,14 +219,15 @@ procedure( GetTableValue_utilityprogram( table row col data_type)
 
 procedure( CheckDataType_utilityprogram( data type err_msg)
 	prog( ( num unit result)
+		msg_title = "CheckDataType()"
 		unless( or( stringp( data) dtpr( data))
-			printf( "ArgErr: CheckDataType() - data[%L] is not a string or a dtpr\n" data)
-			printf( "\t%s\n" err_msg)
+			sprintf( msg "data[%L] is not a string or a dtpr\n\t%s" data err_msg)
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
 		unless( symbolp( type)
-			println( "ArgErr: CheckDataType() - type is not a symbol")
+			PrintMsg_utilityprogram( "[type] is not a symbol" ?title msg_title ?level 'error)
 			return( nil)
 		)
 		
@@ -420,7 +421,7 @@ procedure( CheckDataType_utilityprogram( data type err_msg)
 			)
 			( t
 				sprintf( msg "Yet to support type[%s] to identify data[%s]\n" type data)
-				PrintMsg_utilityprogram( msg ?title "CheckDataType()" ?level 'error)
+				PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
 				result = nil
 			)
 		)
@@ -552,12 +553,19 @@ procedure( SumNumbers_utilityprogram( numbers)
 	)
 )
 
-procedure( RunReport_utilityprogram( cmd_format @optional (on_html nil))
+procedure( RunReport_utilityprogram( cmd_format file_name @optional (on_html nil))
 	; cmd_format = %CDSROOT%\share\pcb\batchhelp\report.txt
 	let( ( html_option cmd)
 		html_option = if( on_html " -H" "")
 		sprintf( cmd "report -v%s %s %%s" html_option cmd_format)
 		axlRunBatchDBProgram( "report" cmd ?silent t)
+		if( isFile( file_name) then
+			axlUIViewFileCreate( file_name title nil)
+			axlOSFileCopy( file_name axlGetVariable( "ads_sdlog") nil)
+		else
+			sprintf( msg "Fail to create %s" file_name)	
+			PrintMsg_utilityprogram( msg ?level 'warn)
+		)
 	)
 )
 
@@ -586,20 +594,20 @@ procedure( CreateShapeByPoints_utilityprogram( points layer)
 	)
 )
 
-procedure( OpenHelpFile_utilityprogram( target_file_name)
+procedure( OpenHelpFile_utilityprogram( file_name)
 	let( ( help_path)
 		help_path = strcat( _flex_host_dir "footprint_building_aid_skill/Help/")
-		OpenFile_utilityprogram( help_path target_file_name ".pdf")
+		OpenFile_utilityprogram( help_path file_name ".pdf")
 	)
 )
 
-procedure( OpenFile_utilityprogram( file_path target_file_name extension)
-	let( ( file_ls file_name)
-		when( and( stringp( file_path) !blankstrp( file_path))
-			file_ls = cddr( getDirFiles( file_path))
-			file_name = car( setof( x file_ls and( index( x extension) index( x target_file_name))))
-			when( file_name
-				shell( strcat( file_path file_name))
+procedure( OpenFile_utilityprogram( dir file_name extension)
+	let( ( file_ls result)
+		when( and( stringp( dir) !blankstrp( dir))
+			file_ls = cddr( getDirFiles( dir))
+			result = car( setof( x file_ls and( index( x extension) index( x file_name))))
+			when( result
+				shell( strcat( dir result))
 			)
 		)
 	)
@@ -785,15 +793,144 @@ procedure( _AcDesignEvent( out_form)
 	)
 )
 
-procedure( PrintMsg_utilityprogram( msg @key (title "") (level 'info))
+procedure( PrintMsg_utilityprogram( msg @key (title "") (level 'info) (show_info nil) (show_warn t))
 	let( ( (title_str "") level_str)
 		unless( blankstrp( title)
-			title_str = strcat( title " - ")	
+			title_str = strcat( title " - ")
 		)
 
 		level_str = upperCase( symbolToString( level))
 		printf( strcat( "*" level_str "* " title_str msg "\n"))
-		axlUIConfirm( msg level)
+		when( or( equal( level 'error) 
+				and( equal( level 'info) show_info)
+				and( equal( level 'warn) show_warn))
+			axlUIConfirm( msg level)
+		)
+	)
+)
+
+
+procedure( CreateSymbol_utilityprogram( sym_nm @key (center_xy (0:0)) (check_term t))
+	;; sym_nm = "flex_pcb_form_v1"
+	prog( ( msg_title up_sym_term msg sym_ls to_create result)
+		msg_title = "CreateSymbol()"
+		unless( stringp( sym_nm)
+			PrintMsg_utilityprogram( "[sym_nm] is not a string" ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		unless( dtpr( center_xy)
+			PrintMsg_utilityprogram( "[center_xy] is not a list" ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		to_create = t
+		if( check_term then
+			up_sym_term = upperCase( sym_nm)
+			up_sym_term = substring( up_sym_term 1 ( strlen( up_sym_term) - strlen( rindex( up_sym_term "_"))))
+			sym_ls = setof( x axlDBGetDesign()->symbols and( x->name index( x->name up_sym_term)))
+			sprintf( msg "Found symbols%L by term[%s] are loaded. Do you want to load [%s]?" sym_ls~>name up_sym_term sym_nm)
+		else
+			sym_ls = setof( x axlDBGetDesign()->symbols and( x->name equal( upperCase( x->name) upperCase( sym_nm))))
+			sprintf( msg "Found %d symbols with same name. Do you want to reload [%s]?" length( sym_ls) sym_nm)
+		)
+
+		when( dtpr( sym_ls)
+			to_create = axlUIYesNo( msg "Reload Symbol" 'yes)
+			when( to_create
+				axlDeleteObject( sym_ls)
+			)
+		)
+
+		;;;; load target symbol from library
+		when( to_create
+			mode = '(shape ignoreFixed)
+			symbol_type_ls = list( "FORMAT" "PACKAGE" "MECHANICAL")
+			while( and( null( result) dtpr( symbol_type_ls))
+				sym_type = car( symbol_type_ls)
+				result = axlDBCloak( 'axlDBCreateSymbol( list( sym_nm sym_type) center_xy) mode)
+				sprintf( msg "Create symbol[%s] by %s: %L" sym_nm sym_type result)
+				PrintMsg_utilityprogram( msg ?title msg_title)
+				symbol_type_ls = remq( sym_type symbol_type_ls)
+			)
+			
+			axlVisibleUpdate( t)
+			if( result then
+				sprintf( msg "Symbol [%s] created at %L" sym_nm center_xy)
+				PrintMsg_utilityprogram( msg ?title msg_title)
+			else
+				sprintf( msg "Fail to create symbol [%s] at %L" sym_nm center_xy)
+				PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
+			)
+		)
+		
+		when( dtpr( result)
+			result = car( result)
+		)
+		
+		return( result)
+	)
+)
+
+
+procedure( MoveObjects_utilityprogram( obj_ls delta_xy)
+	let( ()
+		foreach( obj_id obj_ls
+			axlTransformObject( obj_id ?move delta_xy)
+			axlDBRefreshId( obj_id)		
+		)
+	)
+)
+
+procedure( ExtractFile_utilityprogram( archive_name output_dir @optional (file_filter ""))
+	prog( ( msg_title msg cmd)
+		msg_title = "ExtractFile()"
+		unless( stringp( archive_name)
+			PrintMsg_utilityprogram( "[archive_name] is not a string" ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		unless( isFile( archive_name)
+			sprintf( msg "archive_name:[%L] is not a file" archive_name)
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		sprintf( cmd "\"C:\\Program Files\\7-Zip\\7z\" e %s -o%s %s" archive_name output_dir file_filter)
+		unless( sh( cmd)
+			sprintf( msg "Fail to extract file: %s" archive_name)
+			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
+			return( nil)
+		)
+		
+		return( t)
+	)
+)
+
+procedure( CompareListContent_utilityprogram( list_a list_b)
+	let( ( (content_count makeTable( 'counts 0)))
+		foreach( item list_a
+			content_count[item] = content_count[item] + 1
+		)
+		
+		foreach( item list_b
+			content_count[item] = content_count[item] - 1
+		)
+		
+		forall( x content_count zerop( content_count[x]))
+	)
+)
+
+procedure( OpenFile_utilityprogram( file_path)
+	prog( ()
+		if( index( file_path " ") then
+			PrintMsg_utilityprogram( "Please remove spaces in file path!" ?title "OpenFile()" ?level 'error)
+			return( nil)
+		else
+			shell( strcat( "start " file_path))
+		)
+
+		return( t)
 	)
 )
 
@@ -1057,6 +1194,7 @@ procedure( GetNumberByAlphabet_utilityprogram( word)
 		return( result)
 	)
 )
+
 ;endregion
 
 ;region Find Filter
@@ -1228,6 +1366,8 @@ procedure( NewForm_utilityprogram( file_name header port_width port_height @opti
 			fprintf( out_port "TILE\n")
 		)
 		
+		WriteFormText_utilityprogram( out_port header 1 0 ?option "bold")
+
 		return( out_port)
 	)
 )
@@ -1256,10 +1396,15 @@ procedure( WriteFormButton_utilityprogram( out_port field content x y width heig
 	)
 )
 
-procedure( WriteFormText_utilityprogram( out_port text x y)
+procedure( WriteFormText_utilityprogram( out_port text x y @key (width 0) (height 0) (option nil))
 	let( ()
 		fprintf( out_port "TEXT \"%s\" \n" text)
 		fprintf( out_port "FLOC %d %d\n" x y)
+		;fprintf( out_port "FSIZE %s %d\n" width height)
+		when( option
+			fprintf( out_port "OPTIONS %s\n" option)
+		)
+		
 		fprintf( out_port "ENDTEXT\n")
 	)
 )
@@ -1351,9 +1496,10 @@ procedure( WriteFormCheckList_utilityprogram( out_port field content x y @option
 		; CheckBox
 		fprintf( out_port "FIELD %s\n" field)
 		fprintf( out_port "FLOC %d %d\n" x y)
-		if( argument then
+		; add space after content to avoid content to be cut off
+		content = strcat( " " content " ")
+		if( argument
 			fprintf( out_port "CHECKLIST \"%s\" \"%s\"\n" content argument)
-		else
 			fprintf( out_port "CHECKLIST \"%s\"\n" content)
 		)
 		
@@ -1448,10 +1594,19 @@ procedure( CreateGridCell_utilityprogram( out_form grid_key row col @key (value 
 	)
 )
 
-procedure( SetFormOptions_utilityprogram( out_form form_key_ls @optional (value t))
+procedure( SetFieldValues_utilityprogram( out_form form_key_ls @optional (value t))
 	let( ()
 		foreach( form_key form_key_ls
 			axlFormSetField( out_form form_key value)
+		)
+	)
+)
+
+procedure( GetFieldValues_utilityprogram( out_form form_key_ls table)
+	let( ()
+		foreach( form_key form_key_ls
+			valid = axlFormGetField( out_form form_key)
+			table[ form_key] = valid
 		)
 	)
 )
@@ -1666,331 +1821,8 @@ procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 
 ;endregion
 
-;region PCB control form
-
-procedure( InitFrame_utilityprogram()
-	let( ( width_height)
-		setq( _line_width GetUnitValueByMils_utilityprogram( 20))
-		setq( _hor_width GetUnitValueByMils_utilityprogram( 4120))
-		setq( _hor_height GetUnitValueByMils_utilityprogram( 340))
-		setq( _ver_height GetUnitValueByMils_utilityprogram( 6053))
-		setq( _ver_width _hor_height)
-		setq( _layer_bg_frame "BOARD GEOMETRY/FRAME")
-		setq( _layer_bg_logo "BOARD GEOMETRY/LOGO")
-		setq( _layer_bg_logo_m "BOARD GEOMETRY/LOGO_MIRROR")
-		setq( _layer_bg_bf "BOARD GEOMETRY/BOARD_FORM")
-		setq( _layer_bg_bf_m "BOARD GEOMETRY/BOARD_FORM_MIRROR")
-		setq( _layer_bg_bfk "BOARD GEOMETRY/BOARD_FORM_KEY")
-		setq( _layer_bg_bfk_m "BOARD GEOMETRY/BOARD_FORM_KEY_MIRROR")
-		setq( _layer_bg_an "BOARD GEOMETRY/ASSEMBLY_NOTES")
-		setq( _layer_bg_do "BOARD GEOMETRY/DESIGN_OUTLINE")
-		setq( _layer_df_pcb_fab "DRAWING FORMAT/PCB_FAB")
-		setq( _layer_df_panel "DRAWING FORMAT/PANEL")
-		setq( _layer_df_pcba_top "DRAWING FORMAT/PCBA_TOP")
-		setq( _layer_df_pcba_bot "DRAWING FORMAT/PCBA_BOT")
-
-		
-		setq( _A_size_ls list( "A0" "A1" "A2" "A3"))
-		setq( _A_size_table makeTable( 'A_type nil))
-		width_height = list( 841 1189)
-		foreach( size _A_size_ls
-			_A_size_table[ size] = width_height
-			width_height = list( round( cadr( width_height) / 2) car( width_height))
-		)
-
-		setq( _B_size_ls list( "B0" "B1" "B2" "B3"))
-		setq( _B_size_table makeTable( 'B_type nil))
-		width_height = list( 1000 1414)
-		foreach( size _B_size_ls
-			_B_size_table[ size] = width_height
-			width_height = list( round( cadr( width_height) / 2) car( width_height))
-		)
-	)
-)
-
-procedure( CreateFrame_utilityprogram( type)
-	let( ( layer_ls key_xy_ls obj_ls obj_ls_box hor ver hor_ver size sym_term sym_nm)
-		InitFrame_utilityprogram()
-		case( type
-			( 'PCB_FAB_PANEL
-				layer_ls = list( _layer_bg_an _layer_df_pcb_fab _layer_df_panel _layer_bg_logo)
-				baord_form_key_layer = _layer_bg_bfk
-			)
-			( 'PCBA_TOP
-				layer_ls = list( _layer_df_pcba_top _layer_bg_logo)
-				baord_form_key_layer = _layer_bg_bfk
-			)
-			( 'PCBA_BOT
-				layer_ls = list( _layer_df_pcba_bot _layer_bg_logo_m)
-				baord_form_key_layer = _layer_bg_bfk_m
-			)
-		)
-
-		key_xy_ls = GetTextList_utilityprogram( baord_form_key_layer)~>xy
-
-		layer_ls = append( layer_ls list( _layer_bg_do))
-		obj_ls = GetFindFilter_utilityprogram( layer_ls '(shapes lines text))
-		obj_ls = setof( x obj_ls !member( x->xy key_xy_ls))
-		obj_ls_box = axlDBGetExtents( obj_ls nil)
-		
-		hor = caadr( obj_ls_box) - caar( obj_ls_box)
-		ver = cadadr( obj_ls_box) - cadar( obj_ls_box)
-		; add board_form height (3080)
-		if( equal( _allegro_unit "mils")
-			hor_ver = list( axlMKSConvert( hor "MILS" "MM") axlMKSConvert( (ver + 3080) "MILS" "MM"))
-			hor_ver = list( hor (ver + GetUnitValueByMils_utilityprogram( 3080)))
-		)
-
-		hor_ver = sort( hor_ver 'lessp)
-
-		cond(
-			( eq( type 'PCB_FAB_PANEL)
-				size = GetSizeType_utilityprogram( 'B_type hor_ver)
-				sym_term = "panel_frame_"
-			)
-			( member( type '(PCBA_TOP PCBA_BOT))
-				size = GetSizeType_utilityprogram( 'A_type hor_ver)
-				sym_term = "pcba_frame_"
-			)
-		)
-
-		sym_nm = strcat( sym_term lowerCase( size))
-		CreateSymbol_utilityprogram( sym_nm ?center_xy (10000:0))
-
-		;axlVisibleLayer( layer t)
-	)
-)
-
-procedure( GetSizeType_utilityprogram( type obj_size)
-	let( ( size_ls size_table result_size)
-		case( type
-			( 'A_type
-				size_ls = reverse( _A_size_ls)
-				size_table = _A_size_table
-			)
-			( 'B_type
-				size_ls = reverse( _B_size_ls)
-				size_table = _B_size_table
-			)
-		)
-
-		result_size = nil
-		while( null( result_size)
-			size = car( size_ls)
-			width_height = sort( size_table[ size] 'lessp)
-			when( and( greaterp( ( car( width_height) * cadr( width_height)) ( car( obj_size) * cadr( obj_size))))
-				result_size = size
-			)
-
-			unless( equal( length( size_ls) 1)
-				size_ls = remq( size size_ls)
-			)
-		)
-
-		unless( result_size
-			result_size = car( size_ls)
-		)
-
-		result_size
-	)
-)
-
-procedure( CreateBoardForm_utilityprogram()
-	let( ()
-		CreateSymbol_utilityprogram( "pcba_board_form" ?check_term nil)
-		RelocateBoardForm_utilityprogram( 'PCB_FAB_PANEL)
-
-		RelocateBoardForm_utilityprogram( 'PCBA_TOP)
-		CreateSymbol_utilityprogram( "pcba_board_form_mirror" ?check_term nil)
-		RelocateBoardForm_utilityprogram( 'PCBA_BOT)
-
-		CreateSymbol_utilityprogram( "logo_form" ?center_xy (0:-500) ?check_term nil)
-
-	)
-)
-
-procedure( CreateSymbol_utilityprogram( sym_nm @key (center_xy (0:0)) (check_term t))
-	;; sym_nm = "flex_pcb_form_v1"
-	prog( ( title up_sym_term msg sym_ls to_create result)
-		msg_title = "CreateSymbol()"
-		unless( stringp( sym_nm)
-			PrintMsg_utilityprogram( "sym_nm is not a string" ?title msg_title ?level 'error)
-			return( nil)
-		)
-		
-		unless( dtpr( center_xy)
-			PrintMsg_utilityprogram( "center_xy is not a dtpr" ?title msg_title ?level 'error)
-			return( nil)
-		)
-		
-		to_create = t
-		if( check_term then
-			up_sym_term = upperCase( sym_nm)
-			up_sym_term = substring( up_sym_term 1 ( strlen( up_sym_term) - strlen( rindex( up_sym_term "_"))))
-			sym_ls = setof( x axlDBGetDesign()->symbols index( x->name up_sym_term))
-			sprintf( msg "Found symbols%L by term[%s] are loaded. Do you want to load [%s]?" sym_ls~>name up_sym_term sym_nm)
-		else
-			sym_ls = setof( x axlDBGetDesign()->symbols equal( upperCase( x->name) upperCase( sym_nm)))
-			sprintf( msg "Found %d symbols with same name. Do you want to reload [%s]?" length( sym_ls) sym_nm)
-		)
-
-		when( dtpr( sym_ls)
-			to_create = axlUIYesNo( msg "Reload Symbol" 'yes)
-			when( to_create
-				axlDeleteObject( sym_ls)
-			)
-		)
-
-		;;;; load target symbol from library
-		when( to_create
-			mode = '(shape ignoreFixed)
-			symbol_type_ls = list( "FORMAT" "PACKAGE" "MECHANICAL")
-			while( null( result)
-				sym_type = car( symbol_type_ls)
-				result = axlDBCloak( 'axlDBCreateSymbol( list( sym_nm sym_type) center_xy) mode)
-				printf( "INFO: %s - Create symbol[%s] by %s: %L\n" msg_title sym_nm sym_type result)
-				symbol_type_ls = remq( sym_type symbol_type_ls)
-			)
-			
-			axlVisibleUpdate( t)
-			if( result
-				printf( "Symbol [%s] created at %L\n" sym_nm center_xy)
-				PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
-			)
-		)
-		
-		when( dtpr( result)
-			result = car( result)
-		)
-		
-		return( result)
-	)
-)
-
-procedure( CreateLineByBox_utilityprogram( box layer)
-	let( ( left_bot right_top left_top right_bot path)
-		left_bot = nth( 0 box)
-		right_top = nth( 1 box)
-		left_top = list( nth( 0 left_bot) nth( 1 right_top))
-		right_bot = list( nth( 0 right_top) nth( 1 left_bot))
-		/*
-		top_point = axlMXYAdd( center_xy 0:radius)
-		right_point = axlMXYAdd( center_xy radius:0)
-		bot_point = axlMXYAdd( center_xy 0:-radius)
-		left_point = axlMXYAdd( center_xy -radius:0)
-		
-		path = axlPathStart( list( start_point))
-		axlPathLine( path, 0.0, 200:250)
-		*/
-
-		path = axlPathStart( list( left_bot left_top right_top right_bot left_bot) _line_width)
-		axlDBCreatePath( path layer)
-		
-	)
-)
-
-procedure( GreaterBox_utilityprogram( box_1 box_2)
-	let( ( result)
-		result = and( caar( box_2) >= caar( box_1)
-					cadar( box_2) >= cadar( box_1)
-					caadr( box_2) <= caadr( box_1)
-					cadadr( box_2) <= cadadr( box_1))
-		result
-	)
-)
-
-procedure( RelocateBoardForm_utilityprogram( type)
-	; PCB_FAB, PANEL use B serial paper size (B0 ~ B3)
-	; PCBA use A serial paper size (A0 ~ A3)
-	prog( ( gap frame_layer baord_form_layer baord_form_key_layer frame_box target_xy content_layer
-		obj_ls key_ls key_xy_ls content_ls obj_ls_box form_xy delta_x delta_y)
-		msg_title = "RelocateBoardForm()"
-		unless( member( type list( 'PCB_FAB_PANEL 'PCBA_TOP 'PCBA_BOT))
-			sprintf( msg "type should be one of %L" list( 'PCB_FAB 'PANEL 'PCBA_TOP 'PCBA_BOT))
-			PrintMsg_utilityprogram( msg ?title msg_title ?level 'error)
-			return( nil)
-		)
-
-		unless( boundp( '_hor_height)
-			InitFrame_utilityprogram()
-		)
-		
-		cond(
-			( eq( type 'PCB_FAB_PANEL)
-				frame_layer = _layer_bg_frame
-				content_layer = list( _layer_df_pcb_fab _layer_df_panel)
-				baord_form_layer = _layer_bg_bf
-				baord_form_key_layer = _layer_bg_bfk
-			)
-			( member( type '(PCBA_TOP PCBA_BOT))
-				frame_layer = _layer_bg_frame
-				cond( 
-					( eq( type 'PCBA_TOP)
-						content_layer = _layer_df_pcba_top
-						baord_form_layer = _layer_bg_bf
-						baord_form_key_layer = _layer_bg_bfk
-					)
-					( eq( type 'PCBA_BOT)
-						content_layer = _layer_df_pcba_bot
-						baord_form_layer = _layer_bg_bf_m
-						baord_form_key_layer = _layer_bg_bfk_m
-					)
-				)
-			)
-		)
-
-		gap = _hor_height * 2
-		frame_box = axlDBGetExtents( GetLineList_utilityprogram( frame_layer) nil)
-		if( eq( type 'PCBA_BOT) then
-			target_xy = car( frame_box)
-			target_xy = axlMXYAdd( target_xy gap:gap)
-		else
-			target_xy = list( caadr( frame_box) cadar( frame_box))
-			target_xy = axlMXYAdd( target_xy -gap:gap)
-		)
-		
-		key_ls = GetTextList_utilityprogram( baord_form_key_layer)
-		v1_text_id = car( setof( x key_ls equal( x->text "[v1]")))
-		; board form symbol
-		sym_id = v1_text_id->parent
-
-		text_ls = GetTextList_utilityprogram( content_layer)
-		text_id = car( setof( x text_ls axlGeoPointsEqual( x->xy v1_text_id->xy)))
-
-		obj_ls = car( text_id->parentGroups)->groupMembers
-		unless( dtpr( obj_ls)
-			sprintf( msg "No group text found on %L, please check again!" content_layer)
-			PrintMsg_utilityprogram( msg ?title msg_title ?level 'warn)
-			;return( nil)
-		)
-
-		obj_ls = append1( obj_ls sym_id)
-		obj_ls_box = axlDBGetExtents( obj_ls nil)
-		if( eq( type 'PCBA_BOT)
-			form_xy = car( obj_ls_box)
-			form_xy = list( caadr( obj_ls_box) cadar( obj_ls_box))
-		)
-		
-		delta_x = xCoord( target_xy) - xCoord( form_xy)
-		delta_y = yCoord( target_xy) - yCoord( form_xy)
-
-		MoveObjects_utilityprogram( obj_ls list( delta_x delta_y))
-	)
-)
-
-procedure( MoveObjects_utilityprogram( obj_ls delta_xy)
-	let( ()
-		foreach( obj_id obj_ls
-			axlTransformObject( obj_id ?move delta_xy)
-			axlDBRefreshId( obj_id)		
-		)
-	)
-)
-
-;endregion
-
 /*
-(encrypt "c:/skill/utility_program_v3d7.il" "c:/skill/utility_program_v3d7.ile")
-(load "utility_program_v3d7.il")
-(load "utility_program_v3d7.ile")
+(encrypt "c:/skill/utility_program_v3d8.il" "c:/skill/utility_program_v3d8.ile")
+(load "utility_program_v3d8.il")
+(load "utility_program_v3d8.ile")
 */
