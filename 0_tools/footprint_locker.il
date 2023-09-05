@@ -18,7 +18,7 @@ procedure( Init_footprintlocker()
 	setq( _admin_ls list( '( "tpiwiche" "C4-65-16-83-88-28")))
 	setq( _authorized_ls append( _admin_ls _footprint_user_ls))
 	
-	setq( _locker_path "W:/footprint_building_aid_skill/0-0_Locker/")
+	setq( _locker_path strcat( _pcb_footprint_path "../Tools/Locker/"))
 	setq( _pwd_path strcat( _locker_path "flex.txt"))
 	setq( _input_pwd nil)
 	setq( _pwd_index 4)
@@ -61,8 +61,8 @@ procedure( Main_footprintlocker( @optional ( check_ok_to_proceed t))
 
 axlCmdRegister( "footprint_locker" 'Main_footprintlocker)
 /*
-(encrypt "c:/skill/footprint_locker_v1d2.il" "c:/skill/footprint_locker_v1d2.ile")
-(load "footprint_locker_v1d2.il")
-(load "footprint_locker_v1d2.ile")
+(encrypt "c:/skill/footprint_locker_v1d3.il" "c:/skill/footprint_locker_v1d3.ile")
+(load "footprint_locker_v1d3.il")
+(load "footprint_locker_v1d3.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
