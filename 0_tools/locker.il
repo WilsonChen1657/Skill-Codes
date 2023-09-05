@@ -7,10 +7,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; variable
 
 procedure( init_Derek20210929()
-	setq( _layout_id_ls list( "tpiarlin" "tpibewen" "tpidehsu" "tpiepeng" "tpijchen" "tpiyalee" "tpirhsiu" "tpisting" "tpistdai" "tpitshen" "tpichali"))
+	setq( _layout_id_ls list( "shdselli" "tpiarlin" "tpibewen" "tpidehsu" "tpiepeng" "tpijchen" "tpiyalee" "tpirhsiu" "tpisting" "tpistdai" "tpitshen" "tpichali"))
 	setq( _si_id_ls list( "tpialcha" "tpiandyu" "tpidavil" "tpijalee" "tpijayeh" "tpijeflu" "tpilyliu" "tpimwang" "tpirihua" "tpiwenhu"))
 	setq( _manager_id_ls list( "tpichali" "tpiwelyu" "tpijench"))
-	setq( _admin_ls list( "DerekHsuIsAwesome"))
+	setq( _admin_ls list( "derekhsu"))
 	setq( _authoried_id_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
 )
 
@@ -20,7 +20,13 @@ procedure( init_Derek20210929()
 
 procedure( get_user_id_Derek20210929()
 	prog( ( user_id)
-		user_id = axlDBGetDesign()->prop->LAST_SAVED_NAME
+		user_id = axlDBGetDesign()->prop->LAST_SAVED_NAME || ""
+		when( user_id == ""
+			println( "ERROR: get_user_id() - Fail to get your user ID. Please Save As to a new board file, otherwise, re-open your board file again")
+			return( nil)
+		)
+		
+		user_id = lowerCase( user_id)
 		
 		return( user_id)
 	)
@@ -28,6 +34,7 @@ procedure( get_user_id_Derek20210929()
 
 procedure( is_layout_member_Derek20210929( user_id)
 	prog( ( result)
+		unless( user_id return( nil))
 		result = dtpr( member( user_id _authoried_id_ls))
 		
 		return( result)
@@ -55,8 +62,8 @@ procedure( locker_main_Derek20210929()
 
 (axlCmdRegister "locker" 'locker_main_Derek20210929)
 ; (locker_main_Derek20210929)
-; skill (encrypt "c:/skill/locker_v1d1.il" "c:/skill/locker_v1d1.ile")
-; (load "locker_v1d1.il")
-; (load "locker_v1d1.ile")
+; skill (encrypt "c:/skill/locker_v1d2.il" "c:/skill/locker_v1d2.ile")
+; (load "locker_v1d2.il")
+; (load "locker_v1d2.ile")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end of setup
