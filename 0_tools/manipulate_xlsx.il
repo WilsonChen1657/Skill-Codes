@@ -24,19 +24,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Global Variable
 
 (defun init_Derek06122018 ()
-	(setq excel_addr "")
-	(setq excel_path "")
-	
-	(setq sel_sheet_id nil)
-	(setq sheetname_ls nil)
-	(setq sharedstring_ls nil)
-	(setq string_data_ls nil)
-	(setq sheetname_filename "workbook.xml")
-	(setq sharedstring_filename "sharedStrings.xml")
-	(setq excel_form_name "Excel_Sheet_Selector.form")
-	(setq excel_table_name "Excel_Sheet_Addr_Val.table")
-	(setq excel_csv_filename "Excel_sheet.csv")
-	(setq alphabet_ls (list nil 'A 'B 'C 'D 'E 'F 'G 'H 'I 'J 'K 'L 'M 'N 'O 'P 'Q 'R 'S 'T 'U 'V 'W 'X 'Y 'Z))
+	setq( _sel_sheet_id nil)
+	setq( sheetname_ls nil)
+	setq( sharedstring_ls nil)
+	setq( string_data_ls nil)
+	setq( sheetname_filename "workbook.xml")
+	setq( sharedstring_filename "sharedStrings.xml")
+	setq( excel_form_name "Excel_Sheet_Selector.form")
+	setq( excel_table_name "Excel_Sheet_Addr_Val.table")
+	setq( excel_csv_filename "Excel_sheet.csv")
+	setq( alphabet_ls (list nil 'A 'B 'C 'D 'E 'F 'G 'H 'I 'J 'K 'L 'M 'N 'O 'P 'Q 'R 'S 'T 'U 'V 'W 'X 'Y 'Z))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Global Variable
@@ -243,13 +240,13 @@
 (procedure excel_form_action_Derek06122018(excel_sel_sheet_form)
 	(case excel_sel_sheet_form->curField
 		("sheetname_list"
-			(sel_sheet_id = excel_sel_sheet_form->curValue)
+			(_sel_sheet_id = excel_sel_sheet_form->curValue)
 		)
 		("ok"
 			axlFormClose(excel_sel_sheet_form)
 		)
 		("cancel"
-			(sel_sheet_id = nil)
+			(_sel_sheet_id = nil)
 			axlFormClose(excel_sel_sheet_form)
 		)
 	)
@@ -387,6 +384,16 @@
 	)
 )
 
+(procedure arr_to_list(mx data_arr)
+	(let (line_ls)
+		(for i 1 mx (line_ls = (append1 line_ls data_arr[i])))
+		;;;;; add "" to data, which has comma
+		(line_ls = (mapcar (lambda (x) (if (nindex x ",") (strcat "\"" x "\"") x)) line_ls))
+		
+		line_ls
+	)
+)
+
 (procedure output_csv_Derek06122018(cell_table file_addr)
 	(let (out_port key key_num key_alp val_ls sect mx csv_line_ls line_ls pre_key_num data_arr)
 	(if (outportp (out_port = (outfile file_addr "w"))) then
@@ -415,20 +422,22 @@
 					(pos = get_char_number_Derek06122018(key_alp)) ;; alphabet is the col of the excel
 					(setarray data_arr pos val)
 				else
-					(line_ls = nil)
-					(for i 1 mx (line_ls = (append1 line_ls data_arr[i])))
-					;;;;; add "" to data, which has comma
-					(line_ls = (mapcar (lambda (x) (if (nindex x ",") (strcat "\"" x "\"") x)) line_ls))
+					(line_ls = arr_to_list(mx data_arr))
 					(csv_line_ls = (append1 csv_line_ls (buildString line_ls ",")))
 					;;
 					(for i 1 mx (setarray data_arr i ""))
+					;;
 					(pos = get_char_number_Derek06122018(key_alp)) ;; alphabet is the col of the excel
 					(setarray data_arr pos val)
 					(pre_key_num = key_num)
 				)
 			)
 		)
-		;; output to csv file
+		;;; take the last line
+		(line_ls = arr_to_list(mx data_arr))
+		(csv_line_ls = (append1 csv_line_ls (buildString line_ls ",")))
+		
+		;;; output to csv file
 		(foreach line csv_line_ls (fprintf out_port "%s\n" line))
 		
 		(close out_port)
@@ -453,7 +462,96 @@
 	(sharedstring_ls = (mapcar (lambda (x) rexReplace(x "and" 0)) sharedstring_ls))
 )
 
-(defun manipulate_xlsx_main_Derek06122018 ()
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Main Function
+
+procedure( manipulate_xlsx_main_Derek06122018()
+	(prog (file_addr old_file_ls new_file_ls file)
+		init_Derek06122018()
+		
+		old_file_ls = (getDirFiles getWorkingDir())
+		
+		;;;;; ask to input xlsx name
+		excel_addr = (axlDMFileBrowse nil nil ?title "Please select a xlsx file" ?optFilters "All xlsx files|*.xlsx|")
+		unless( isFile( excel_addr) println( "No file has been selected. program halt") (return nil))
+		unless( (equal ".xlsx" (substring excel_addr ((strlen excel_addr) - 4))) println("Please select a xlsx file") return( nil))
+		
+		;; add " to the section having spacing
+		(excel_path = (get_file_path_Derek06122018 excel_addr))
+		(excel_addr = (parseString excel_addr "/"))
+		(excel_addr = (mapcar (lambda (x) (if (nindex x " ") (strcat "\"" x "\"") x)) excel_addr))
+		
+		;; convert skill read path to OS file path
+		(excel_addr = (buildString excel_addr "\\"))
+		
+		;;;;; unzip the file
+		;; check
+		(unless (sh "\"C:\\Program Files\\7-Zip\\7z\"")
+			println("Please install 7-zip to C:\\Program Files\\7-Zip\\7z")
+			(return nil)
+		)
+		; (axlOSBackSlash getWorkingDir())
+		(sprintf cmd "C:\\\"Program Files\"\\7-Zip\\7z e %s -y" excel_addr)
+		
+		(unless (sh cmd)
+			println("Fail to extract the excel file. program halt")
+			(return nil)
+		)
+		
+		;;;;; get new file list
+		(new_file_ls = (getDirFiles getWorkingDir()))
+		(new_file_ls = (mapcan (lambda (x) (unless (member x old_file_ls) (list x))) new_file_ls))
+		
+		;;;;; get all sheetname
+		println("Getting Sheet Name...")
+		(file_addr = (strcat getWorkingDir() "/" sheetname_filename))
+		(get_sheetnames_Derek06122018 file_addr)
+		
+		;;;;; get string list
+		println("Getting SharedString Data...")
+		(file_addr = (strcat getWorkingDir() "/" sharedstring_filename))
+		(get_sharedstrings_Derek06122018 file_addr)
+		;(for i 0 (sub1 (length sharedstring_ls)) printf("%d     %s\n" (i + 2) (nth i sharedstring_ls)))
+		
+		;;;;; filter data list / replace & to and / replace \n to [enter]
+		filter_data_ls_Derek06122018()
+		
+		;;;;; ask which sheet the user wants / by form
+		println("Creating Form...")
+		create_form_Derek06122018()
+		(unless _sel_sheet_id
+			(foreach file new_file_ls (when (isFile file) (deleteFile file)))
+			(return nil)
+		)
+		
+		;;;;; create dictionary by selected sheets
+		println("Getting Sheet Content...")
+		(file_addr = (strcat getWorkingDir() "/" _sel_sheet_id ".xml"))
+		(cell_table = makeTable("cell_table" nil))
+		(get_sheet_content_Derek06122018 cell_table file_addr)
+
+		;;;;; delete unzipped files and dir
+		(foreach file new_file_ls (when (isFile file) (deleteFile file)))
+		
+		;;;;; output cell table
+		println("Outputting Cell Table...")
+		(file_addr = (strcat getWorkingDir() "/" excel_table_name))
+		(deleteFile file_addr)
+		(output_cell_table_Derek06122018 cell_table file_addr)
+		
+		;;;;; convert the table to csv
+		println("Outputting csv file...")
+		(file_addr = (strcat getWorkingDir() "/" excel_csv_filename))
+		(deleteFile file_addr)
+		(output_csv_Derek06122018 cell_table file_addr)
+		
+		;;;
+		(return t)
+	)
+)
+
+(defun manipulate_xlsx_first_main_Derek06122018 ()
 	(prog (file_addr old_file_ls new_file_ls file)
 	init_Derek06122018()
 	
@@ -468,10 +566,12 @@
 		println("Please select a xlsx file")
 		(return nil)
 	)
+	
 	;; add " to the section having spacing
 	(excel_path = (get_file_path_Derek06122018 excel_addr))
 	(excel_addr = (parseString excel_addr "/"))
 	(excel_addr = (mapcar (lambda (x) (if (nindex x " ") (strcat "\"" x "\"") x)) excel_addr))
+	
 	;; convert skill read path to OS file path
 	(excel_addr = (buildString excel_addr "\\"))
 	
@@ -493,11 +593,6 @@
 	(new_file_ls = (getDirFiles getWorkingDir()))
 	(new_file_ls = (mapcan (lambda (x) (unless (member x old_file_ls) (list x))) new_file_ls))
 	
-	;;;;; get all sheetname
-	println("Getting Sheet Name...")
-	(file_addr = (strcat getWorkingDir() "/" sheetname_filename))
-	(get_sheetnames_Derek06122018 file_addr)
-	
 	;;;;; get string list
 	println("Getting SharedString Data...")
 	(file_addr = (strcat getWorkingDir() "/" sharedstring_filename))
@@ -507,17 +602,12 @@
 	;;;;; filter data list
 	filter_data_ls_Derek06122018()
 	
-	;;;;; ask which sheet the user wants / by form
-	println("Creating Form...")
-	create_form_Derek06122018()
-	(unless sel_sheet_id
-		(foreach file new_file_ls (when (isFile file) (deleteFile file)))
-		(return nil)
-	)
+	;;;;; to select the very first sheet in the excel
+	(_sel_sheet_id = "sheet1")
 	
 	;;;;; create dictionary by selected sheets
 	println("Getting Sheet Content...")
-	(file_addr = (strcat getWorkingDir() "/" sel_sheet_id ".xml"))
+	(file_addr = (strcat getWorkingDir() "/" _sel_sheet_id ".xml"))
 	(cell_table = makeTable("cell_table" nil))
 	(get_sheet_content_Derek06122018 cell_table file_addr)
 
@@ -541,14 +631,15 @@
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Main Function
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Setup
 
 (axlCmdRegister "manipulate_xlsx" 'manipulate_xlsx_main_Derek06122018)
+(axlCmdRegister "manipulate_xlsx first" 'manipulate_xlsx_first_main_Derek06122018)
 ; (manipulate_xlsx_main_Derek06122018)
-; (encrypt "c:/skill/manipulate_xlsx_v1.il" "c:/skill/manipulate_xlsx_v1.ile")
-; (load "manipulate_xlsx_v1.ile")
-; (load "manipulate_xlsx_v1.il")
+; skill (encrypt "c:/skill/manipulate_xlsx_v2.il" "c:/skill/manipulate_xlsx_v2.ile")
+; (load "manipulate_xlsx_v2.ile")
+; (load "manipulate_xlsx_v2.il")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
