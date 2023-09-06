@@ -18,7 +18,7 @@ procedure( Init_locker()
 								'( "tpibewen" "B0-0C-D1-6E-CD-A6" "6C-02-E0-69-F2-6B") '( "tpidehsu" "")
 								'( "tpiepeng" "C8-D9-D2-A7-8A-CB") '( "tpijchen" "B4-B6-86-E6-86-58")
 								'( "tpiyalee" "10-62-E5-6C-3B-F6" "6C-02-E0-69-F3-1B") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
-								'( "tpisting" "10-62-E5-6C-3C-68") '( "tpistdai" "B4-B6-86-93-5F-15")
+								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5") '( "tpistdai" "B4-B6-86-93-5F-15")
 								'( "tpitshen" "E4-E7-49-3A-41-32")))
 	setq( _si_id_ls list( '( "tpialcha" "") '( "tpiandyu" "")
 							'( "tpidavil" "") '( "tpijalee" "")
@@ -213,8 +213,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v1d6.il" "c:/skill/locker_v1d6.ile")
-(load "locker_v1d6.il")
-(load "locker_v1d6.ile")
+(encrypt "c:/skill/locker_v1d7.il" "c:/skill/locker_v1d7.ile")
+(load "locker_v1d7.il")
+(load "locker_v1d7.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
