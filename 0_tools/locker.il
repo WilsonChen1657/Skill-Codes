@@ -18,20 +18,21 @@ procedure( Init_locker()
 								'( "tpibewen" "B0-0C-D1-6E-CD-A6" "6C-02-E0-69-F2-6B") '( "tpidehsu" "")
 								'( "tpiepeng" "C8-D9-D2-A7-8A-CB") '( "tpijchen" "B4-B6-86-E6-86-58")
 								'( "tpiyalee" "10-62-E5-6C-3B-F6" "6C-02-E0-69-F3-1B") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
-								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5") '( "tpistdai" "B4-B6-86-93-5F-15")
+								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5" "C8-F7-50-F8-38-99") '( "tpistdai" "B4-B6-86-93-5F-15")
 								'( "tpitshen" "E4-E7-49-3A-41-32")))
-	setq( _si_id_ls list( '( "tpialcha" "") '( "tpiandyu" "")
-							'( "tpidavil" "C4-65-16-84-F5-F5") '( "tpijalee" "")
+	; 08-00-27-01-2C-0B = si vm's mac address
+	setq( _si_id_ls list( '( "tpialcha" "") '( "tpiandyu" "C4-65-16-84-F5-7D" "08-00-27-01-2C-0B")
+							'( "tpidavil" "C4-65-16-84-F5-F5" "08-00-27-01-2C-0B") '( "tpijalee" "")
 							'( "tpijayeh" "") '( "tpijeflu" "")
 							'( "tpilyliu" "") '( "tpimwang" "")
-							'( "tpirihua" "") '( "tpiwenhu" "")
-							'( "tpierimo" "B4-B6-86-95-BC-9B")))
+							'( "tpirihua" "B4-B6-86-94-98-52" "08-00-27-01-2C-0B") '( "tpiwenhu" "")
+							'( "tpierimo" "B4-B6-86-95-BC-9B" "08-00-27-01-2C-0B")))
 	setq( _manager_id_ls list( '( "tpichali" "C4-65-16-84-F5-1F") '( "tpiwelyu" "E4-E7-49-50-EF-83" "C0-18-03-B5-BB-24") '( "tpijench" "84-A9-3E-44-76-ED")))
 	setq( _admin_ls list( '( "tpiwiche" "C4-65-16-83-88-28")))
 	setq( _authorized_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
 	
 	setq( _locker_path "W:/footprint_building_aid_skill/0-0_Locker/")
-	setq( _pwd_path strcat( _locker_path "flex.txt"))
+	setq( _pwd_path nil)
 	setq( _input_pwd nil)
 	setq( _pwd_index 4)
 )
@@ -40,8 +41,8 @@ procedure( Init_locker()
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Main
 
-procedure( Main_locker( @optional ( check_ok_to_proceed t))
-	prog( ( user_id result)
+procedure( Main_locker( @optional (check_ok_to_proceed t))
+	prog( ( result)
 		when( check_ok_to_proceed
 			unless( axlOKToProceed()
 				println( "Please done the current function to keep continue")
@@ -53,6 +54,7 @@ procedure( Main_locker( @optional ( check_ok_to_proceed t))
 			Init_locker()
 		)
 		
+		_pwd_path = strcat( _locker_path "flex.txt")
 		unless( CheckExpireDate_locker( _pwd_path)
 			return( nil)
 		)
@@ -111,11 +113,9 @@ procedure( IsAuthorized_locker()
 		)
 		
 		authorized = CheckMacAddressExists_locker()
-		/*
-		local_mac = GetMacAddress_locker()
-		authorized = setof( x _authorized_ls member( local_mac cdr( x)))
-		*/
+		;authorized = setof( x _authorized_ls member( local_mac cdr( x)))
 		unless( authorized
+			local_mac = GetMacAddress_locker()
 			sprintf( msg "You have to be a member of Flex TDC Layout member to use this tool [%L] -- by Wilson Chen" local_mac)
 			axlUIConfirm( msg)
 			return( nil)
@@ -249,8 +249,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v1d9.il" "c:/skill/locker_v1d9.ile")
-(load "locker_v1d9.il")
-(load "locker_v1d9.ile")
+(encrypt "c:/skill/locker_v2d0.il" "c:/skill/locker_v2d0.ile")
+(load "locker_v2d0.il")
+(load "locker_v2d0.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
