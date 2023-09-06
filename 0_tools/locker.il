@@ -103,22 +103,24 @@ procedure( GetUserId_locker()
 )
 
 procedure( IsAuthorized_locker()
-	prog( ( result)
+	prog( ( user_id user_data local_mac authorized)
 		user_id = GetUserId_locker()
 		unless( user_id
 			return( nil)
 		)
 		
+		authorized = CheckMacAddressExists_locker()
+		/*
 		local_mac = GetMacAddress_locker()
-		
 		authorized = setof( x _authorized_ls member( local_mac cdr( x)))
+		*/
 		unless( authorized
-			msg = "You have to be a member of Flex TDC Layout member to use this tool [%s] -- by Wilson Chen"
-			axlUIConfirm( sprintf( nil msg local_mac))
+			sprintf( msg "You have to be a member of Flex TDC Layout member to use this tool [%L] -- by Wilson Chen" local_mac)
+			axlUIConfirm( msg)
 			return( nil)
 		)
 		
-		printf( "Hello %s\n" car( car( authorized)))
+		printf( "Hello %s\n" car( authorized))
 		return( t)
 	)
 )
@@ -132,6 +134,54 @@ procedure( GetExpireDate_locker( file_fullname)
 
 procedure( GetMacAddress_locker()
 	prog( ( file_name port suffix mac)
+		port = GetIpConfig_locker()
+		unless( port
+			return( nil)
+		)
+		
+		suffix = ""
+		while( gets( line port)
+			when( index( line "Connection-specific DNS Suffix")
+				suffix = car( last( parseString( line ": \n")))
+			)
+			
+			when( member( suffix _suffix_ls) && index( line "Physical Address")
+				mac = car( last( parseString( line ": \n")))
+				axlDMClose( port)
+				return( mac)
+			)
+		)
+		 
+		axlDMClose( port)
+		return( nil)
+    )
+)
+
+procedure( CheckMacAddressExists_locker()
+	prog( ( port user_data)
+		port = GetIpConfig_locker()
+		unless( port
+			return( nil)
+		)
+		
+		while( gets( line port)
+			when( index( line "Physical Address")
+				mac = car( last( parseString( line ": \n")))
+				user_data = setof( x _authorized_ls member( mac cdr( x)))
+				when( user_data
+					axlDMClose( port)
+					return( car( user_data))
+				)
+			)
+		)
+		 
+		axlDMClose( port)
+		return( nil)
+	)
+)
+
+procedure( GetIpConfig_locker()
+	prog( ( log_dir file_name log_path port)
 		unless( axlGetVariable( "ads_sdlog")
 			axlSetVariable( "ads_sdlog" "log")
 		)
@@ -156,23 +206,8 @@ procedure( GetMacAddress_locker()
 			return( nil)
 		)
 		
-		suffix = ""
-		
-		while( gets( line port)
-			when( index( line "Connection-specific DNS Suffix")
-				suffix = car( last( parseString( line ": \n")))
-			)
-			
-			when( member( suffix _suffix_ls) && index( line "Physical Address")
-				mac = car( last( parseString( line ": \n")))
-				axlDMClose( port)
-				return( mac)
-			)
-		)
-		 
-		axlDMClose( port)
-		return( nil)
-    )
+		return( port)
+	)
 )
 
 procedure( CheckPwd_locker()
@@ -213,8 +248,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v1d7.il" "c:/skill/locker_v1d7.ile")
-(load "locker_v1d7.il")
-(load "locker_v1d7.ile")
+(encrypt "c:/skill/locker_v1d8.il" "c:/skill/locker_v1d8.ile")
+(load "locker_v1d8.il")
+(load "locker_v1d8.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
