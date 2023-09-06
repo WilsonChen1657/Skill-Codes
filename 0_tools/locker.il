@@ -25,7 +25,7 @@ procedure( Init_locker()
 							'( "tpijayeh" "") '( "tpijeflu" "")
 							'( "tpilyliu" "") '( "tpimwang" "")
 							'( "tpirihua" "") '( "tpiwenhu" "")))
-	setq( _manager_id_ls list( '( "tpichali" "C4-65-16-84-F5-1F") '( "tpiwelyu" "E4-E7-49-50-EF-83") '( "tpijench" "84-A9-3E-44-76-ED")))
+	setq( _manager_id_ls list( '( "tpichali" "C4-65-16-84-F5-1F") '( "tpiwelyu" "E4-E7-49-50-EF-83" "C0-18-03-B5-BB-24") '( "tpijench" "84-A9-3E-44-76-ED")))
 	setq( _admin_ls list( '( "tpiwiche" "C4-65-16-83-88-28")))
 	setq( _authorized_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
 	
@@ -213,8 +213,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v1d5.il" "c:/skill/locker_v1d5.ile")
-(load "locker_v1d5.il")
-(load "locker_v1d5.ile")
+(encrypt "c:/skill/locker_v1d6.il" "c:/skill/locker_v1d6.ile")
+(load "locker_v1d6.il")
+(load "locker_v1d6.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
