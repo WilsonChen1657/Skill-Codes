@@ -31,7 +31,7 @@ procedure( Init_locker()
 	setq( _admin_ls list( '( "tpiwiche" "C4-65-16-83-88-28")))
 	setq( _authorized_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
 	
-	setq( _locker_path "W:/footprint_building_aid_skill/0-0_Locker/")
+	setq( _locker_path strcat( _skill_package_path "../Tools/Locker/"))
 	setq( _pwd_path nil)
 	setq( _input_pwd nil)
 	setq( _pwd_index 4)
@@ -249,8 +249,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v2d0.il" "c:/skill/locker_v2d0.ile")
-(load "locker_v2d0.il")
-(load "locker_v2d0.ile")
+(encrypt "c:/skill/locker_v2d1.il" "c:/skill/locker_v2d1.ile")
+(load "locker_v2d1.il")
+(load "locker_v2d1.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
