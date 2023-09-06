@@ -15,11 +15,11 @@ setq( _locker_initialized nil)
 setq( _suffix_ls '( "tpi.flextronics.com" "shd.flextronics.com" "hitronhub.home"))
 procedure( Init_locker()
 	setq( _layout_id_ls list( '( "shdselli" "AC-E2-D3-3C-91-EC") '( "tpiarlin" "C8-F7-50-F8-28-74")
-								'( "tpibewen" "B0-0C-D1-6E-CD-A6") '( "tpidehsu" "")
+								'( "tpibewen" "B0-0C-D1-6E-CD-A6" "6C-02-E0-69-F2-6B") '( "tpidehsu" "")
 								'( "tpiepeng" "C8-D9-D2-A7-8A-CB") '( "tpijchen" "B4-B6-86-E6-86-58")
-								'( "tpiyalee" "10-62-E5-6C-3B-F6") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
+								'( "tpiyalee" "10-62-E5-6C-3B-F6" "6C-02-E0-69-F3-1B") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
 								'( "tpisting" "10-62-E5-6C-3C-68") '( "tpistdai" "B4-B6-86-93-5F-15")
-								'( "tpitshen" "")))
+								'( "tpitshen" "E4-E7-49-3A-41-32")))
 	setq( _si_id_ls list( '( "tpialcha" "") '( "tpiandyu" "")
 							'( "tpidavil" "") '( "tpijalee" "")
 							'( "tpijayeh" "") '( "tpijeflu" "")
@@ -28,10 +28,6 @@ procedure( Init_locker()
 	setq( _manager_id_ls list( '( "tpichali" "C4-65-16-84-F5-1F") '( "tpiwelyu" "E4-E7-49-50-EF-83") '( "tpijench" "84-A9-3E-44-76-ED")))
 	setq( _admin_ls list( '( "tpiwiche" "C4-65-16-83-88-28")))
 	setq( _authorized_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
-	setq( _authorized_table makeTable( "authorized" nil))
-	foreach( item _authorized_ls
-		_authorized_table[ car( item)] = cdr( item)
-	)
 	
 	setq( _locker_path "W:/footprint_building_aid_skill/0-0_Locker/")
 	setq( _pwd_path strcat( _locker_path "flex.txt"))
@@ -115,18 +111,14 @@ procedure( IsAuthorized_locker()
 		
 		local_mac = GetMacAddress_locker()
 		
-		mac_ls = _authorized_table[ user_id]
-		unless( mac_ls
-			axlUIConfirm( "You have to be a member of Flex TDC Layout member to use this tool -- by Wilson Chen")
+		authorized = setof( x _authorized_ls member( local_mac cdr( x)))
+		unless( authorized
+			msg = "You have to be a member of Flex TDC Layout member to use this tool [%s] -- by Wilson Chen"
+			axlUIConfirm( sprintf( nil msg local_mac))
 			return( nil)
 		)
 		
-		unless( member( local_mac mac_ls)
-			msg = "You can save as to a new board file, or re-open your board file again"
-			axlUIConfirm( sprintf( nil "[%s] your MAC address [%s] is not allowed to use this tool\n%s -- by Wilson Chen" user_id local_mac msg))
-			return( nil)
-		)
-		
+		printf( "Hello %s\n" car( car( authorized)))
 		return( t)
 	)
 )
@@ -140,18 +132,31 @@ procedure( GetExpireDate_locker( file_fullname)
 
 procedure( GetMacAddress_locker()
 	prog( ( file_name port suffix mac)
-		suffix = ""
-		file_name = "ipconfig.txt"
-		unless( isFile( file_name)
-			system( strcat( "ipconfig/all > " file_name))
+		unless( axlGetVariable( "ads_sdlog")
+			axlSetVariable( "ads_sdlog" "log")
 		)
 		
-		port = axlDMOpenFile( "TEMP" file_name "r")
-		unless( port
-			deleteFile( file_name)
-			printf( "Fail to get %s\n" file_name)
+		log_dir = axlGetVariable( "ads_sdlog") || ""
+		unless( or( zerop( strlen( log_dir)) isDir( log_dir))
+			createDir( log_dir)
+		)
+		
+		sscanf( getCurrentTime() "%s %d %d:%d:%d %d" month date hour minute second year)
+		sprintf( file_name "ipconfig-%.4d%s%.2d.log" year month date)
+		sprintf( log_path "%s/%s" log_dir file_name)
+
+		unless( isFile( log_path)
+			system( strcat( "ipconfig/all > " log_path))
+		)
+		
+		port = infile( log_path)
+		unless( inportp( port)
+			deleteFile( log_path)
+			printf( "Fail to get %s\n" log_path)
 			return( nil)
 		)
+		
+		suffix = ""
 		
 		while( gets( line port)
 			when( index( line "Connection-specific DNS Suffix")
@@ -208,8 +213,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v1d4.il" "c:/skill/locker_v1d4.ile")
-(load "locker_v1d4.il")
-(load "locker_v1d4.ile")
+(encrypt "c:/skill/locker_v1d5.il" "c:/skill/locker_v1d5.ile")
+(load "locker_v1d5.il")
+(load "locker_v1d5.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
