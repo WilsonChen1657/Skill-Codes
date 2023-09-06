@@ -17,8 +17,8 @@ procedure( Init_locker()
 	setq( _layout_id_ls list( '( "shdselli" "AC-E2-D3-3C-91-EC") '( "tpiarlin" "C8-F7-50-F8-28-74" "70-D8-23-FE-8E-90")
 								'( "tpibewen" "B0-0C-D1-6E-CD-A6" "6C-02-E0-69-F2-6B") '( "tpidehsu" "")
 								'( "tpiepeng" "C8-D9-D2-A7-8A-CB") '( "tpijchen" "B4-B6-86-E6-86-58")
-								'( "tpiyalee" "10-62-E5-6C-3B-F6" "6C-02-E0-69-F3-1B") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
-								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5" "C8-F7-50-F8-38-99")
+								'( "tpiyalee" "10-62-E5-6C-3B-F6" "6C-02-E0-69-F3-1B" "AC-19-8E-32-26-B1") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
+								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5" "C8-F7-50-F8-38-99" "E0-73-E7-A8-D3-EB")
 								'( "tpistdai" "7C-57-58-3F-CD-A7" "D4-D8-53-01-2E-AD")
 								'( "tpitshen" "E4-E7-49-3A-41-32")))
 	; 08-00-27-01-2C-0B = si vm's mac address
@@ -95,7 +95,7 @@ procedure( GetUserId_locker()
 	prog( ( user_id)
 		user_id = axlDBGetDesign()->prop->LAST_SAVED_NAME
 		unless( stringp( user_id)
-			msg = "Fail to get your user ID. Please Save As to a new board file, otherwise, re-open your board file again"
+			msg = "Fail to get your user ID.\nPlease \"Save As\" to a new board file, otherwise, re-open your board file again"
 			axlUIConfirm( msg)
 			printf( "ERROR: GetUserId() - %s\n" msg)
 			return( nil)
@@ -107,17 +107,12 @@ procedure( GetUserId_locker()
 )
 
 procedure( IsAuthorized_locker()
-	prog( ( local_mac authorized_id)
-		/*	
+	prog( ( user_id authorized_id local_mac)
 		user_id = GetUserId_locker()
-			unless( user_id
-				return( nil)
-			)
-		*/
 		authorized_id = CheckMacAddressExists_locker()
 		unless( authorized_id
 			local_mac = GetMacAddress_locker()
-			sprintf( msg "You have to be a member of Flex TDC Layout member to use this tool [%L] -- by Wilson Chen" local_mac)
+			sprintf( msg "User %L have to be a member of Flex TDC Layout member to use this tool [%L] -- by Wilson Chen" user_id local_mac)
 			axlUIConfirm( msg)
 			return( nil)
 		)
@@ -153,7 +148,7 @@ procedure( GetMacAddress_locker()
 				return( mac)
 			)
 		)
-		 
+		
 		axlDMClose( in_port)
 		return( nil)
     )
@@ -201,7 +196,6 @@ procedure( GetIpConfig_locker()
 			system( strcat( "ipconfig/all > " log_path))
 		)
 		
-		
 		unless( inportp( in_port = infile( log_path))
 			deleteFile( log_path)
 			printf( "Fail to get %s\n" log_path)
@@ -218,7 +212,7 @@ procedure( CheckPwd_locker()
 		unless( _input_pwd
 			_input_pwd = axlUIPrompt( "You are currently not authorized to use skill package!!\nPlease contact Wilson Chen for temporary password")
 		)
-			
+		
 		if( isFile( _pwd_path) then
 			in_port = infile( _pwd_path)
 			unless( inportp( in_port)
@@ -250,8 +244,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v2d2.il" "c:/skill/locker_v2d2.ile")
-(load "locker_v2d2.il")
-(load "locker_v2d2.ile")
+(encrypt "c:/skill/locker_v2d3.il" "c:/skill/locker_v2d3.ile")
+(load "locker_v2d3.il")
+(load "locker_v2d3.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
