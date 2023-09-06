@@ -12,13 +12,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Global Variable
 setq( _locker_initialized nil)
-setq( _suffix_ls '( "tpi.flextronics.com" "shd.flextronics.com" "hitronhub.home"))
+setq( _suffix_ls '( "tpi.flextronics.com" "shd.flextronics.com" "hitronhub.home" "asia.ad.flextronics.com"))
 procedure( Init_locker()
-	setq( _layout_id_ls list( '( "shdselli" "AC-E2-D3-3C-91-EC") '( "tpiarlin" "C8-F7-50-F8-28-74")
+	setq( _layout_id_ls list( '( "shdselli" "AC-E2-D3-3C-91-EC") '( "tpiarlin" "C8-F7-50-F8-28-74" "70-D8-23-FE-8E-90")
 								'( "tpibewen" "B0-0C-D1-6E-CD-A6" "6C-02-E0-69-F2-6B") '( "tpidehsu" "")
 								'( "tpiepeng" "C8-D9-D2-A7-8A-CB") '( "tpijchen" "B4-B6-86-E6-86-58")
 								'( "tpiyalee" "10-62-E5-6C-3B-F6" "6C-02-E0-69-F3-1B") '( "tpirhsiu" "B0-0C-D1-6E-CF-04")
-								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5" "C8-F7-50-F8-38-99") '( "tpistdai" "B4-B6-86-93-5F-15")
+								'( "tpisting" "10-62-E5-6C-3C-68" "B4-B6-86-4B-4D-C5" "C8-F7-50-F8-38-99")
+								'( "tpistdai" "7C-57-58-3F-CD-A7" "D4-D8-53-01-2E-AD")
 								'( "tpitshen" "E4-E7-49-3A-41-32")))
 	; 08-00-27-01-2C-0B = si vm's mac address
 	setq( _si_id_ls list( '( "tpialcha" "") '( "tpiandyu" "C4-65-16-84-F5-7D" "08-00-27-01-2C-0B")
@@ -106,22 +107,22 @@ procedure( GetUserId_locker()
 )
 
 procedure( IsAuthorized_locker()
-	prog( ( user_id user_data local_mac authorized)
+	prog( ( local_mac authorized_id)
+		/*	
 		user_id = GetUserId_locker()
-		unless( user_id
-			return( nil)
-		)
-		
-		authorized = CheckMacAddressExists_locker()
-		;authorized = setof( x _authorized_ls member( local_mac cdr( x)))
-		unless( authorized
+			unless( user_id
+				return( nil)
+			)
+		*/
+		authorized_id = CheckMacAddressExists_locker()
+		unless( authorized_id
 			local_mac = GetMacAddress_locker()
 			sprintf( msg "You have to be a member of Flex TDC Layout member to use this tool [%L] -- by Wilson Chen" local_mac)
 			axlUIConfirm( msg)
 			return( nil)
 		)
 		
-		printf( "Hello %s\n" car( authorized))
+		printf( "Hello %s\n" authorized_id)
 		return( t)
 	)
 )
@@ -134,55 +135,55 @@ procedure( GetExpireDate_locker( file_fullname)
 )
 
 procedure( GetMacAddress_locker()
-	prog( ( file_name port suffix mac)
-		port = GetIpConfig_locker()
-		unless( port
+	prog( ( file_name in_port suffix mac)
+		in_port = GetIpConfig_locker()
+		unless( in_port
 			return( nil)
 		)
 		
 		suffix = ""
-		while( gets( line port)
+		while( gets( line in_port)
 			when( index( line "Connection-specific DNS Suffix")
 				suffix = car( last( parseString( line ": \n")))
 			)
 			
-			when( member( suffix _suffix_ls) && index( line "Physical Address")
+			when( and( member( suffix _suffix_ls) index( line "Physical Address"))
 				mac = car( last( parseString( line ": \n")))
-				axlDMClose( port)
+				axlDMClose( in_port)
 				return( mac)
 			)
 		)
 		 
-		axlDMClose( port)
+		axlDMClose( in_port)
 		return( nil)
     )
 )
 
 procedure( CheckMacAddressExists_locker()
-	prog( ( port user_data)
-		port = GetIpConfig_locker()
-		unless( port
+	prog( ( in_port user_data)
+		in_port = GetIpConfig_locker()
+		unless( in_port
 			return( nil)
 		)
 		
-		while( gets( line port)
+		while( gets( line in_port)
 			when( index( line "Physical Address")
 				mac = car( last( parseString( line ": \n")))
-				user_data = setof( x _authorized_ls member( mac cdr( x)))
+				user_data = car( setof( x _authorized_ls member( mac cdr( x))))
 				when( user_data
-					axlDMClose( port)
+					axlDMClose( in_port)
 					return( car( user_data))
 				)
 			)
 		)
 		 
-		axlDMClose( port)
+		axlDMClose( in_port)
 		return( nil)
 	)
 )
 
 procedure( GetIpConfig_locker()
-	prog( ( log_dir file_name log_path port)
+	prog( ( log_dir file_name log_path in_port)
 		unless( axlGetVariable( "ads_sdlog")
 			axlSetVariable( "ads_sdlog" "log")
 		)
@@ -200,14 +201,14 @@ procedure( GetIpConfig_locker()
 			system( strcat( "ipconfig/all > " log_path))
 		)
 		
-		port = infile( log_path)
-		unless( inportp( port)
+		
+		unless( inportp( in_port = infile( log_path))
 			deleteFile( log_path)
 			printf( "Fail to get %s\n" log_path)
 			return( nil)
 		)
 		
-		return( port)
+		return( in_port)
 	)
 )
 
@@ -249,8 +250,8 @@ procedure( CheckPwd_locker()
 
 axlCmdRegister( "locker" 'Main_locker)
 /*
-(encrypt "c:/skill/locker_v2d1.il" "c:/skill/locker_v2d1.ile")
-(load "locker_v2d1.il")
-(load "locker_v2d1.ile")
+(encrypt "c:/skill/locker_v2d2.il" "c:/skill/locker_v2d2.ile")
+(load "locker_v2d2.il")
+(load "locker_v2d2.ile")
 */
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
