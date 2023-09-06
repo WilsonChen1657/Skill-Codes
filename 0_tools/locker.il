@@ -1,22 +1,47 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; introduction
+/*
+################################################################################
+#                                                                              #
+#  Developer: Derek Hsu, Wilson Chen                                           #
+#  Start Date: 2021/10/29                                                      #
+#  Reference:                                                                  #
+#  Purpose:                                                                    #
+#       To check if user is authorized to use tools                            #
+#                                                                              #
+################################################################################
+*/
 
-; Start Date: _Derek20210929
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end of introduction
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; variable
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Global Variable
 
 procedure( init_Derek20210929()
 	setq( _layout_id_ls list( "shdselli" "tpiarlin" "tpibewen" "tpidehsu" "tpiepeng" "tpijchen" "tpiyalee" "tpirhsiu" "tpisting" "tpistdai" "tpitshen" "tpichali"))
 	setq( _si_id_ls list( "tpialcha" "tpiandyu" "tpidavil" "tpijalee" "tpijayeh" "tpijeflu" "tpilyliu" "tpimwang" "tpirihua" "tpiwenhu"))
 	setq( _manager_id_ls list( "tpichali" "tpiwelyu" "tpijench"))
-	setq( _admin_ls list( "derekhsu"))
-	setq( _authoried_id_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
+	setq( _admin_ls list( "tpiwiche"))
+	setq( _authorized_id_ls append( _admin_ls append( _manager_id_ls append( _layout_id_ls _si_id_ls))))
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end of variable
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Global Variable
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; function
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Main
+
+procedure( locker_main_Derek20210929()
+	prog( ( user_id result)
+		init_Derek20210929()
+		
+		user_id = get_user_id_Derek20210929()
+		result = is_layout_member_Derek20210929( user_id)
+		
+		unless( result
+			axlUIConfirm( "You have to be a member of Flex TDC Layout member to use this tool -- by Wilson Chen")
+		)
+		
+		return( result)
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Main
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Function
 
 procedure( get_user_id_Derek20210929()
 	prog( ( user_id)
@@ -27,7 +52,6 @@ procedure( get_user_id_Derek20210929()
 		)
 		
 		user_id = lowerCase( user_id)
-		
 		return( user_id)
 	)
 )
@@ -35,35 +59,20 @@ procedure( get_user_id_Derek20210929()
 procedure( is_layout_member_Derek20210929( user_id)
 	prog( ( result)
 		unless( user_id return( nil))
-		result = dtpr( member( user_id _authoried_id_ls))
+		result = dtpr( member( user_id _authorized_id_ls))
 		
 		return( result)
 	)
 )
 
-procedure( locker_main_Derek20210929()
-	prog( ( user_id result)
-		init_Derek20210929()
-		
-		user_id = get_user_id_Derek20210929()
-		result = is_layout_member_Derek20210929( user_id)
-		
-		unless( result
-			axlUIConfirm( "You have to be a member of Flex TDC Layout member to use this tool -- by Derek Hsu")
-		)
-		
-		return( result)
-	)
-)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Function
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end of function
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; setup
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Setup
 
 (axlCmdRegister "locker" 'locker_main_Derek20210929)
 ; (locker_main_Derek20210929)
-; skill (encrypt "c:/skill/locker_v1d2.il" "c:/skill/locker_v1d2.ile")
-; (load "locker_v1d2.il")
-; (load "locker_v1d2.ile")
+; skill (encrypt "c:/skill/locker_v1d3.il" "c:/skill/locker_v1d3.ile")
+; (load "locker_v1d3.il")
+; (load "locker_v1d3.ile")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end of setup
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
