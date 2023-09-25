@@ -128,50 +128,64 @@ procedure( get_attr_val_Derek06122018( attr section)
 	)
 )
 
-procedure( get_section_Derek06122018( key pos sentence)
-	let( ( start end1 end2 result tail tail1 tail2 tail_len)
-		end1 = "/>"
-		sprintf( end2 "</%s>" key)
-		;;
-		if( pos then
-			sentence = substring( sentence pos)
-			pos = 1
-		else
-			sprintf( start "<%s " key)
-			pos = nindex( sentence start)
-			unless( pos
-				sprintf( start "<%s>" key)
-				pos = nindex( sentence start)
-			)
-		)
-		;;
-		when( numberp( pos)
-			tail1 = nindex( sentence end1)
-			tail2 = nindex( sentence end2)
-			
-			when( and( null( tail1) tail2)
-				(tail = tail2)
-				(tail_len = strlen( end2))
-			)
-			when( and( tail1 null( tail2))
-				(tail = tail1)
-				(tail_len = strlen( end1))
-			)
-			when( and( tail1 tail2)
-				when( and( (pos < tail1) (tail1 < tail2))
-					(tail = tail1)
-					(tail_len = strlen( end1))
-				)
-				when( and( (pos < tail2) (tail1 > tail2))
-					(tail = tail2)
-					(tail_len = strlen( end2))
-				)
-			)
-			;printf("sen:%s - pos:%d - tail:%d - res:%d\n" substring( sentence 1 5) pos tail (tail - pos + tail_len))
-			result = substring( sentence pos (tail - pos + tail_len))
+procedure( get_tag_pos_Derek06122018( key sentence @optional (start_pos nil))
+	prog( ( head pos)
+		unless( key && sentence return( nil))
+		
+		when( start_pos
+			sentence = substring( sentence start_pos)
 		)
 		
-		result
+		unless( sentence return( nil))
+		
+		;;; get things by next head tag
+		sprintf( head "<%s " key)
+		pos = nindex( sentence head)
+		
+		unless( pos
+			;;; get things by next head tag
+			sprintf( head "<%s>" key)
+			pos = nindex( sentence head)
+		)
+		
+		unless( pos
+			sprintf( head "</%s>" key)
+			pos = nindex( sentence head)
+			when( pos
+				pos = pos + strlen( head)
+			)
+		)
+		
+		unless( pos
+			head = "/>"
+			pos = nindex( sentence head)
+			when( pos
+				pos = pos + strlen( head)
+			)
+		)
+		
+		when( pos && start_pos
+			pos = start_pos + pos - 1
+		)
+		
+		return( pos)
+	)
+)
+
+procedure( get_section_Derek06122018( key sentence @optional (pos nil))
+	prog( ( pos_start pos_end result)
+		;;
+		pos_start = get_tag_pos_Derek06122018( key sentence pos)
+		
+		when( pos_start
+			pos_end = get_tag_pos_Derek06122018( key sentence add1( pos_start))
+		)
+		
+		when( pos_start && pos_end
+			result = substring( sentence pos_start (pos_end - pos_start))
+		)
+		
+		return( result)
 	)
 )
 
@@ -208,7 +222,7 @@ procedure( get_sheetnames_Derek06122018()
 		;;
 		line = index( all_line key)
 		while( stringp( line)
-			section = get_section_Derek06122018( "sheet" 1 line)
+			section = get_section_Derek06122018( "sheet" line 1)
 			nm = get_attr_val_Derek06122018( "name" section)
 			result_ls = append1( result_ls nm)
 			;;
@@ -400,8 +414,9 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 		line = index( all_line key)
 		rexCompile( "\\([0-9]+\\)")
 		while( and( stringp( line) null( to_limit))
-			section = get_section_Derek06122018( "c" nil line)
-			nm = get_section_Derek06122018( "v" nil section)
+			section = get_section_Derek06122018( "c" line)
+			nm = get_section_Derek06122018( "v" section)
+			
 			;;
 			when( stringp( nm)
 				nm = substring( nm 4 ((strlen nm) - 7))
@@ -850,8 +865,8 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 
 (axlCmdRegister "manipulate_xlsx" 'manipulate_xlsx_main_Derek06122018)
 ; manipulate_xlsx_main_Derek06122018()
-; skill (encrypt "c:/skill/manipulate_xlsx_v3.il" "c:/skill/manipulate_xlsx_v3.ile")
-; (load "manipulate_xlsx_v3.ile")
-; (load "manipulate_xlsx_v3.il")
+; skill (encrypt "c:/skill/manipulate_xlsx_v3d1.il" "c:/skill/manipulate_xlsx_v3d1.ile")
+; (load "manipulate_xlsx_v3d1.il")
+; (load "manipulate_xlsx_v3d1.ile")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
