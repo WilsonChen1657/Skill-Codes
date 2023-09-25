@@ -129,7 +129,7 @@ procedure( get_attr_val_Derek06122018( attr section)
 )
 
 procedure( get_tag_pos_Derek06122018( key sentence @optional (start_pos nil))
-	prog( ( head pos)
+	prog( ( head pos1 pos2 pos3 pos4 pos_ls pos)
 		unless( key && sentence return( nil))
 		
 		when( start_pos
@@ -140,30 +140,34 @@ procedure( get_tag_pos_Derek06122018( key sentence @optional (start_pos nil))
 		
 		;;; get things by next head tag
 		sprintf( head "<%s " key)
-		pos = nindex( sentence head)
+		pos1 = nindex( sentence head)
 		
-		unless( pos
-			;;; get things by next head tag
-			sprintf( head "<%s>" key)
-			pos = nindex( sentence head)
+		;;;;; 
+		sprintf( head "<%s>" key)
+		pos2 = nindex( sentence head)
+		
+		;;;;;
+		sprintf( head "</%s>" key)
+		pos3 = nindex( sentence head)
+		when( pos3
+			pos3 = pos3 + strlen( head)
 		)
 		
-		unless( pos
-			sprintf( head "</%s>" key)
-			pos = nindex( sentence head)
-			when( pos
-				pos = pos + strlen( head)
-			)
+		;;;;;
+		head = "/>"
+		pos4 = nindex( sentence head)
+		when( pos4
+			pos4 = pos4 + strlen( head)
 		)
 		
-		unless( pos
-			head = "/>"
-			pos = nindex( sentence head)
-			when( pos
-				pos = pos + strlen( head)
-			)
+		;;;;;
+		pos_ls = list( pos1 pos2 pos3 pos4)
+		pos_ls = remq( nil pos_ls)
+		when( dtpr( pos_ls)
+			pos = apply( 'min pos_ls)
 		)
 		
+		;;;;;
 		when( pos && start_pos
 			pos = start_pos + pos - 1
 		)
@@ -182,7 +186,8 @@ procedure( get_section_Derek06122018( key sentence @optional (pos nil))
 		)
 		
 		when( pos_start && pos_end
-			result = substring( sentence pos_start (pos_end - pos_start))
+			section_length = pos_end - pos_start
+			result = substring( sentence pos_start section_length)
 		)
 		
 		return( result)
@@ -389,6 +394,51 @@ procedure( create_form_Derek06122018( sheetname_ls)
 	)
 )
 
+procedure( read_file_Derek06122018( filename)
+	prog( ( all_line in_port)
+		
+		in_port = infile( filename)
+		unless( inportp( in_port)
+			printf( "ERROR: get_sheet_content() - Fail to read %s\n" filename)
+			return( nil)
+		)
+		
+		all_line = ""
+		while( gets( line in_port)
+			all_line = strcat( all_line line)
+		)
+		
+		close( in_port)
+		
+		;printf( "INFO: read_file() - Get content in %s\n\t%L\n" filename all_line)
+		
+		return( all_line)
+	)
+)
+
+procedure( get_value_from_section_Derek06122018( section tag)
+	;;;;; "<v>23</v>" - get 23 from it
+	prog( (parts total_parts part start_tag_pos value_pos value)
+		parts = axlStringCSVParse( section t ">")
+		
+		total_parts = length( parts) - 1
+		for( i 0 total_parts
+			part = nth( i parts)
+			when( index( part tag) && null( start_tag_pos)
+				start_tag_pos = i
+			)
+		)
+		
+		when( numberp( start_tag_pos)
+			value_pos = start_tag_pos + 1
+			value = nth( value_pos parts)
+			value = car( parseString( value "<"))
+		)
+		
+		return( value)
+	)
+)
+
 procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 	prog( ( file_addr cell_table in_port key key_len tmp line all_line section nm addr pos row to_limit)
 		unless( dtpr( sharedstring_ls) println( "ArgErr: get_sheet_content() - sharedstring_ls is not a dtpr") return( nil))
@@ -399,9 +449,8 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 		
 		all_line = line = ""
 		sprintf( file_addr "%s/%s.xml" _work_path sheet_id)
-		unless( inportp( in_port = infile( file_addr)) println( "ERROR: get_sheet_content() - Fail to read file_addr") return( nil))
-		while( (gets line in_port) (all_line = strcat( all_line line)))
-		close( in_port)
+		all_line = read_file_Derek06122018( file_addr)
+		unless( stringp( all_line) return( nil))
 		
 		;;;
 		cell_table = makeTable( "cell_table" nil)
@@ -419,7 +468,10 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 			
 			;;
 			when( stringp( nm)
-				nm = substring( nm 4 ((strlen nm) - 7))
+				;printf( "INFO: get_sheet_content() - value:[%L] section:[%L]\n" nm section)
+				
+				; nm = substring( nm 4 ((strlen nm) - 7))
+				nm = get_value_from_section_Derek06122018( nm "v")
 				when( nindex( section "t=\"s\"")
 					nm = nth( atoi( nm) sharedstring_ls)
 				)
@@ -451,7 +503,9 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 		)
 		
 		;;;
-		unless( dtpr( cell_table->?) (cell_table = nil))
+		unless( dtpr( cell_table->?)
+			cell_table = nil
+		)
 		
 		return( cell_table)
 	)
@@ -639,6 +693,7 @@ procedure( get_sheet_id_Derek06122018( sheetname_ls @optional (global_sheets nil
 		
 		if( stringp( global_sheets) then
 			rexCompile( "sheet\\([0-9]+\\)")
+			
 			if( rexExecute( global_sheets) then
 				total = length( sheetname_ls)
 				number = atoi( rexSubstitute( "\\1"))
@@ -648,7 +703,12 @@ procedure( get_sheet_id_Derek06122018( sheetname_ls @optional (global_sheets nil
 				)
 			else
 				number = listnindex( sheetname_ls global_sheets)
-				unless( integerp( number) printf( "ERROR: get_sheet_id() - sheetname[%s] does not exists\n" global_sheets) return( nil))
+				
+				unless( integerp( number)
+					printf( "ERROR: get_sheet_id() - sheetname[%s] does not exists\n" global_sheets)
+					return( nil)
+				)
+				
 				sprintf( result "sheet%d" add1( number))
 			)
 		else
@@ -723,31 +783,49 @@ procedure( extract_xlsx_Derek06122018( xlsx_addr question_to_select)
 
 procedure( get_sheet_id_ls_Derek06122018( sheetname_ls global_sheets)
 	prog( ( sheet_id sheet_get_opt sheet_id_ls )
-		unless( dtpr( sheetname_ls) println( "ArgErr: get_sheet_id_ls() - sheetname_ls is not a dtpr") return( nil))
+		unless( dtpr( sheetname_ls)
+			println( "ArgErr: get_sheet_id_ls() - sheetname_ls is not a dtpr")
+			return( nil)
+		)
 		;;
 		
-		when( and( null( global_sheets) onep( length( sheetname_ls))) (global_sheets = car( sheetname_ls)))
+		when( null( global_sheets) && onep( length( sheetname_ls))
+			global_sheets = car( sheetname_ls)
+		)
+		
 		cond(
+			( global_sheets == ""
+				sheet_id_ls = mapcar( lambda( (x) get_sheet_id_Derek06122018( sheetname_ls x)) sheetname_ls)
+			)
 			( stringp( global_sheets)
 				sheet_id = get_sheet_id_Derek06122018( sheetname_ls global_sheets)
-				when( stringp( sheet_id) (sheet_id_ls = list( sheet_id)))
+				when( stringp( sheet_id)
+					sheet_id_ls = list( sheet_id)
+				)
 				sheet_get_opt = global_sheets
 			)
 			( dtpr( global_sheets)
 				foreach( us global_sheets
 					sheet_id = get_sheet_id_Derek06122018( sheetname_ls us)
-					when( stringp( sheet_id) (sheet_id_ls = append1( sheet_id_ls sheet_id)))
+					
+					when( stringp( sheet_id)
+						sheet_id_ls = append1( sheet_id_ls sheet_id)
+					)
 				)
+				
 				sheet_get_opt = global_sheets
 			)
-			(t
+			( t
 				sheet_id = get_sheet_id_Derek06122018( sheetname_ls)
 				when( stringp( sheet_id) (sheet_id_ls = list( sheet_id)))
 				sheet_get_opt = "form selection"
 			)
 		)
 		
-		unless( dtpr( sheet_id_ls) printf( "ERROR: Fail to get sheet ID by %L\n" sheet_get_opt) return( nil))
+		unless( dtpr( sheet_id_ls)
+			printf( "ERROR: Fail to get sheet ID by %L\n" sheet_get_opt)
+			return( nil)
+		)
 		
 		return( sheet_id_ls)
 	)
@@ -771,7 +849,10 @@ procedure( write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv 
 				cell_table = get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 			;	foreach( k cell_table printf( "[%s] - %s\n" k cell_table[k]))
 				
-				unless( tablep( cell_table) println( "ERROR: Fail to create cell_table") return( nil))
+				unless( tablep( cell_table)
+					printf( "ERROR: write_sheets() - Fail to create [%s] cell_table\n" sheet_id)
+					return( nil)
+				)
 				
 				;;;;; output cell table
 				unless( non_table
@@ -814,11 +895,12 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 													(default_xlsm nil))
 	; manipulate_xlsx_main_Derek06122018( nil nil)
 	;;; global_sheets:
+	;;;		"": export all sheet
 	;;;		nil: if there is only one, get this one directly
 	;;;		   : if there are more than one sheet, select by form
 	;;;		"sheet1": get sheet1
 	;;;		"sheet name": get sheet by name
-	prog( ( excel_name old_file_ls new_file_ls sheet_id_ls sheetname_ls result)
+	prog( ( excel_name old_file_ls new_file_ls sheet_id_ls result)
 		when( and( non_table non_csv) println( "Both of non_table and non_csv are nil") return( nil))
 		
 		init_Derek06122018()
@@ -835,24 +917,37 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 		
 		;;;;; get string list
 		sharedstring_ls = get_sharedstrings_Derek06122018()
-		unless( dtpr( sharedstring_ls) println( "ERROR: manipulate_xlsx_main() - Fail to get sharedstring") return( nil))
+		unless( dtpr( sharedstring_ls)
+			println( "ERROR: manipulate_xlsx_main() - Fail to get sharedstring")
+			return( nil)
+		)
 		printf( "Info: manipulate_xlsx_main() - Length of Shared string: %d\n" length( sharedstring_ls))
 		
 		;;;;; get all sheetname
-		sheetname_ls = get_sheetnames_Derek06122018()
-		unless( dtpr( sheetname_ls) println( "ERROR: manipulate_xlsx_main() - Fail to get sheetname") return( nil))
-		printf( "Info: manipulate_xlsx_main() - Sheetnames: %L\n" sheetname_ls)
+		_sheetname_ls = get_sheetnames_Derek06122018()
+		unless( dtpr( _sheetname_ls)
+			println( "ERROR: manipulate_xlsx_main() - Fail to get sheetname")
+			return( nil)
+		)
+		printf( "Info: manipulate_xlsx_main() - Sheetnames: %L\n" _sheetname_ls)
 		
 		;;;;; ask which sheet the user wants / by form
-		sheet_id_ls = get_sheet_id_ls_Derek06122018( sheetname_ls global_sheets)
-		unless( dtpr( sheet_id_ls) return( nil))
+		sheet_id_ls = get_sheet_id_ls_Derek06122018( _sheetname_ls global_sheets)
+		unless( dtpr( sheet_id_ls)
+			return( nil)
+		)
 		
 		;;;;;
 		result = write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv row_limits)
 		unless( result return( nil))
 
 		;;;;; delete unzipped files and dir
-		foreach( file new_file_ls when( isFile( file) deleteFile( file)))
+		foreach( file new_file_ls
+			when( isFile( file)
+				deleteFile( file)
+				printf( "INFO: MAIN() - %s has been deleted" file)
+			)
+		)
 		
 		;;;
 		return( t)
@@ -864,9 +959,10 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Setup
 
 (axlCmdRegister "manipulate_xlsx" 'manipulate_xlsx_main_Derek06122018)
+; manipulate_xlsx_main_Derek06122018(?xlsx_addr "D:/workspace/boards/brd_bellona_haha/Raider_Stackup_v0.1_0907.xlsx" ?global_sheets "sheet6")
 ; manipulate_xlsx_main_Derek06122018()
-; skill (encrypt "c:/skill/manipulate_xlsx_v3d1.il" "c:/skill/manipulate_xlsx_v3d1.ile")
-; (load "manipulate_xlsx_v3d1.il")
-; (load "manipulate_xlsx_v3d1.ile")
+; skill (encrypt "c:/skill/manipulate_xlsx_v3d3.il" "c:/skill/manipulate_xlsx_v3d3.ile")
+; (load "manipulate_xlsx_v3d3.il")
+; (load "manipulate_xlsx_v3d3.ile")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
