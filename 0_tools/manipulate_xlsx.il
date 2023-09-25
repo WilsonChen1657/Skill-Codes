@@ -14,6 +14,8 @@
 ;		2. if it is a string value, then it'll be stored in xl>sharedStrings.xml
 ;	2. Sheetnames have been stored in xl>workbook.xml
 ;
+;
+;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Introduction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Global Variable
@@ -46,8 +48,10 @@ procedure( init_Derek06122018()
 
 procedure( get_number_by_alphabet_Derek06122018( word)
 	prog( ( str_len left right result)
-		unless( or( stringp( word) symbolp( word)) println( "ArgErr: get_number_by_alphabet() - word is not a symbol or string") return( nil))
-		;;
+		unless( or( stringp( word) symbolp( word)) 
+			println( "ArgErr: get_number_by_alphabet() - word is not a symbol or string") 
+			return( nil)
+		)
 		
 		when( symbolp( word) (word = symbolToString( word)))
 		
@@ -69,13 +73,14 @@ procedure( get_number_by_alphabet_Derek06122018( word)
 
 procedure( get_alphabet_by_number_Derek06122018( number)
 	prog( ( left right result)
-		unless( and( plusp( number) integerp( number)) println( "ArgErr: get_alphabet_by_number() - Number is not a plus integer") return( nil))
-		;;
+		unless( and( plusp( number) integerp( number)) 
+			println( "ArgErr: get_alphabet_by_number() - Number is not a plus integer") 
+			return( nil)
+		)
 		
 		if( (number > _alphabet_total) then
 			left = number / _alphabet_total
 			right = remainder( number _alphabet_total)
-			;;
 			cond(
 				( (left > _alphabet_total)
 					printf( "ERROR: get_alphabet_by_number() - Fail to define number[%d]\n" number)
@@ -90,7 +95,7 @@ procedure( get_alphabet_by_number_Derek06122018( number)
 					right = nth( right _alphabet_ls)
 				)
 			)
-			;;
+			
 			result = strcat( left right)
 			result = stringToSymbol( result)
 		else
@@ -109,7 +114,6 @@ procedure( get_attr_val_Derek06122018( attr section)
 		found = nil
 		sprintf( start " %s=" attr)
 		
-		;;
 		sect = index( section start)
 		
 		;;; go to value start
@@ -118,7 +122,6 @@ procedure( get_attr_val_Derek06122018( attr section)
 		;;; go to value end
 		when( stringp( tail1) (tail2 = index( substring( tail1 2) "\"")))
 		
-		;;
 		when( and( sect tail1 tail2)
 			sect_len = strlen( sect)
 			result = substring( sect add1( strlen( start)) ( strlen( tail1) - strlen( tail2) + 1))
@@ -142,32 +145,27 @@ procedure( get_tag_pos_Derek06122018( key sentence @optional (start_pos nil))
 		sprintf( head "<%s " key)
 		pos1 = nindex( sentence head)
 		
-		;;;;; 
 		sprintf( head "<%s>" key)
 		pos2 = nindex( sentence head)
 		
-		;;;;;
 		sprintf( head "</%s>" key)
 		pos3 = nindex( sentence head)
 		when( pos3
 			pos3 = pos3 + strlen( head)
 		)
 		
-		;;;;;
 		head = "/>"
 		pos4 = nindex( sentence head)
 		when( pos4
 			pos4 = pos4 + strlen( head)
 		)
 		
-		;;;;;
 		pos_ls = list( pos1 pos2 pos3 pos4)
 		pos_ls = remq( nil pos_ls)
 		when( dtpr( pos_ls)
 			pos = apply( 'min pos_ls)
 		)
 		
-		;;;;;
 		when( pos && start_pos
 			pos = start_pos + pos - 1
 		)
@@ -178,7 +176,6 @@ procedure( get_tag_pos_Derek06122018( key sentence @optional (start_pos nil))
 
 procedure( get_section_Derek06122018( key sentence @optional (pos nil))
 	prog( ( pos_start pos_end result)
-		;;
 		pos_start = get_tag_pos_Derek06122018( key sentence pos)
 		
 		when( pos_start
@@ -197,12 +194,10 @@ procedure( get_section_Derek06122018( key sentence @optional (pos nil))
 procedure( get_section_val_Derek06122018( section)
 	prog( ( start end result)
 		unless( stringp( section) println( "ArgErr: get_section_val() - section is not a string") return( nil))
-		;;
 		
 		start = nindex( section ">")
 		end = rindex( section "<")
 		
-		;;
 		when( stringp( end) (end = ( strlen( section) - strlen( end))))
 		when( and( integerp( start) integerp( end))
 			result = substring( section add1( start) (end - start))
@@ -217,20 +212,19 @@ procedure( get_sheetnames_Derek06122018()
 		unless( isFile( _sheet_addr) printf( "ArgErr: get_sheetnames() - [%s] is not a file\n" _sheet_addr) return( nil))
 		in_port = infile( _sheet_addr)
 		unless( inportp( in_port) println( "ERROR: get_sheetnames() - Fail to write file") return( nil))
-		;;
 		
 		all_line = line = ""
 		key = "<sheet "
 		
 		while( gets( line in_port) (all_line = strcat( all_line line)))
 		close( in_port)
-		;;
+
 		line = index( all_line key)
 		while( stringp( line)
 			section = get_section_Derek06122018( "sheet" line 1)
 			nm = get_attr_val_Derek06122018( "name" section)
 			result_ls = append1( result_ls nm)
-			;;
+
 			line = substring( line strlen( section))
 			line = index( line key)
 		)
@@ -246,27 +240,24 @@ procedure( get_sharedstrings_Derek06122018()
 		unless( isFile( _sharedstring_addr) printf( "ArgErr: get_sharedstrings() - [%s] is not a file\n" _sharedstring_addr) return( nil))
 		in_port = infile( _sharedstring_addr)
 		unless( inportp( in_port) println( "ArgErr: get_sharedstrings() - Fail to write file") return( nil))
-		;;
 		
 		all_line = line = ""
 		key1 = "<t>"
 		key2 = "<t "
 		
-		;;
 		while( gets( line in_port) (all_line = strcat( all_line line)))
 		close( in_port)
-		
-		;;
+
 		section = index( all_line "<si>")
 		while( stringp( section)
 			nm = ""
 			pos = nindex( section "</si>")
 			sect = substring( section 1 (pos + 4)) ;; 4 is the strlen of </si>~~
-			;;;
+
 			sect1 = index( sect key1)
 			sect2 = index( sect key2)
 			while( or( stringp( sect1) stringp( sect2))
-				;; printf("%L --- %L\n" list( sect1) list( sect2))
+				; printf("%L --- %L\n" list( sect1) list( sect2))
 				cond(
 					( and( null( sect1) stringp( sect2)) (sect = sect2))
 					( and( stringp( sect1) null( sect2)) (sect = sect1))
@@ -278,15 +269,15 @@ procedure( get_sharedstrings_Derek06122018()
 				pos1 = nindex( sect "</t>")
 				tmp = substring( sect 1 (pos1 + 3))
 				nm = strcat( nm get_section_val_Derek06122018( tmp))
-				;;
+				
 				sect = substring( sect pos1) ;; 5 is the strlen of </si>
 				sect1 = index( sect key1)
 				sect2 = index( sect key2)
 			)
-			;;;
+
 			section = substring( section (pos + 5))
 			section = index( section "<si>")
-			;;;
+
 			result_ls = append1( result_ls nm)
 		)
 		
@@ -300,7 +291,6 @@ procedure( form_builder_Derek06122018()
 	prog( ( out_port)
 		out_port = outfile( _excel_form_name "w")
 		unless( outportp( out_port) println( "ERROR: form_builder() - Fail to write file") return( nil))
-		;;
 	
 		fprintf( out_port "FILE_TYPE=FORM_DEFN VERSION=1\n")
 		fprintf( out_port "FORM TOOLWINDOW \n")
@@ -347,8 +337,7 @@ procedure( form_builder_Derek06122018()
 procedure( excel_form_action_Derek06122018(excel_sel_sheet_form)
 	prog( (field)
 		unless( axlIsFormType( excel_sel_sheet_form) println( "ArgErr: excel_form_action() - excel_sel_sheet_form is not a form") return( nil))
-		;;
-		
+
 		field = excel_sel_sheet_form->curField
 		
 		(case field
@@ -371,22 +360,17 @@ procedure( create_form_Derek06122018( sheetname_ls)
 	prog( (excel_sel_sheet_form i num_ls total bind_ls)
 		unless( dtpr( sheetname_ls) println( "ArgErr: create_form() - sheetname_ls is not a list") return( nil))
 		unless( forall( x sheetname_ls stringp( x)) println( "ArgErr: create_form() - sheetname_ls contains non-string element") return( nil))
-		;;
-		
-		;;;
+
 		form_builder_Derek06122018()
 		
-		;;;
 		excel_sel_sheet_form = (axlFormCreate (gensym) _excel_form_name '("east" "outer") 'excel_form_action_Derek06122018 nil)
 		unless( axlIsFormType( excel_sel_sheet_form) println( "ERROR: create_form() - Fail to create form") return( nil))
-		
-		;;;
+
 		total = length( sheetname_ls)
 		for( i 1 total (num_ls = append1( num_ls sprintf( nil "sheet%d" i))))
 		bind_ls = mapcar( 'list sheetname_ls num_ls)
 		axlFormBuildPopup( excel_sel_sheet_form "sheetname_list" bind_ls)
-		
-		;;
+
 		axlFormDisplay( excel_sel_sheet_form)
 		deleteFile( _excel_form_name)
 		
@@ -419,15 +403,20 @@ procedure( read_file_Derek06122018( filename)
 procedure( get_value_from_section_Derek06122018( section tag)
 	;;;;; "<v>23</v>" - get 23 from it
 	prog( (parts total_parts part start_tag_pos value_pos value)
-		parts = axlStringCSVParse( section t ">")
+		; axlStringCSVParse will error in Cadence 16.6 - Wilson_20220324
+		;parts = axlStringCSVParse( section t ">")
+		parts = parseString( section ">")
 		
 		total_parts = length( parts) - 1
 		for( i 0 total_parts
 			part = nth( i parts)
+					
+			printf( "total parts %d" total_parts)
 			when( index( part tag) && null( start_tag_pos)
 				start_tag_pos = i
 			)
 		)
+
 		
 		when( numberp( start_tag_pos)
 			value_pos = start_tag_pos + 1
@@ -486,9 +475,7 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits 
 			println( "ArgErr: get_sheet_content() - col_limits is not a plusp integer")
 			return( nil)
 		)
-		;;
-		
-		;;;;;
+
 		sprintf( file_addr "%s/%s.xml" _work_path sheet_id)
 		all_line = read_file_Derek06122018( file_addr)
 		unless( stringp( all_line) return( nil))
@@ -501,19 +488,16 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits 
 				all_line = substring( all_line 1 sub1( pos))
 			)
 		)
-		
-		;;;
+
 		cell_table = makeTable( "cell_table" nil)
-		
-		;;
+
 		to_limit = nil
 		key = "<c "
 		line = index( all_line key)
 		while( and( stringp( line) null( to_limit))
 			section = get_section_Derek06122018( "c" line)
 			nm = get_section_Derek06122018( "v" section)
-			
-			;;
+
 			if( stringp( nm) then
 				;printf( "INFO: get_sheet_content() - value:[%L] section:[%L]\n" nm section)
 				
@@ -522,8 +506,7 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits 
 				when( nindex( section "t=\"s\"")
 					nm = nth( atoi( nm) sharedstring_ls)
 				)
-				
-				;;
+
 				addr = get_addr_from_section_Derek06122018( section)
 				row_col = get_rc_from_addr_Derek06122018( addr)
 				row = car( row_col)
@@ -558,8 +541,7 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits 
 				line = index( line key)
 			)
 		)
-		
-		;;;
+
 		unless( dtpr( cell_table->?)
 			cell_table = nil
 		)
@@ -572,19 +554,16 @@ procedure( sort_addr_Derek06122018(a b)
 	prog( (a1 a2 b1 b2 result)
 		unless( stringp( a) println( "ArgErr: sort_addr() - a is not a string") return( nil))
 		unless( stringp( b) println( "ArgErr: sort_addr() - b is not a string") return( nil))
-		;;
 		
 		a = upperCase( a)
 		b = upperCase( b)
-		
-		;;;
+
 		rexCompile("[A-Z]+")
 		unless( rexExecute( a) printf( "ERROR: Fail to get [A-Z] from [%s]\n" a) return( nil))
 		a1 = rexSubstitute( "\\0")
 		unless( rexExecute( b) printf( "ERROR: Fail to get [A-Z] from [%s]\n" b) return( nil))
 		b1 = rexSubstitute( "\\0")
-		
-		;;;
+
 		a2 = substring( a add1( strlen( a1)))
 		b2 = substring( b add1( strlen( b1)))
 		
@@ -602,9 +581,7 @@ procedure( output_cell_table_Derek06122018( table_filename cell_table)
 		when( isFile( table_filename) deleteFile( table_filename))
 		out_port = outfile( table_filename "w")
 		unless( outportp( out_port) println( "ERROR: output_cell_table() - Fail to write cell table") return( nil))
-		;;
-		
-		;;
+
 		val_ls = tableToList( cell_table)
 		val_ls = sortcar( val_ls 'sort_addr_Derek06122018)
 	
@@ -620,15 +597,14 @@ procedure( get_max_row_from_table_Derek06122018( key_ls)
 	prog( ( row max_row)
 		unless( dtpr( key_ls) println( "ArgErr: get_max_row_from_table() - key_ls is not a dtpr") return( nil))
 		unless( forall( k key_ls stringp( k)) println( "ArgErr: get_max_row_from_table() - key_ls is not a string list") return( nil))
-		;;
-		
+
 		max_row = 0
 		rexCompile( "^[A-Z]+\\([0-9]+\\)$")
 		foreach( key key_ls
 			when( rexExecute( key)
 				row = rexSubstitute( "\\1")
 				row = atoi( row)
-				;;
+
 				when( (row > max_row) (max_row = row))
 			)
 		)
@@ -643,8 +619,7 @@ procedure( get_max_col_from_table_Derek06122018( key_ls)
 	prog( ( col char max_col)
 		unless( dtpr( key_ls) println( "ArgErr: get_max_col_from_table() - key_ls is not a dtpr") return( nil))
 		unless( forall( k key_ls stringp( k)) println( "ArgErr: get_max_col_from_table() - key_ls is not a string list") return( nil))
-		;;
-		
+
 		max_col = 0
 		rexCompile( "^\\([A-Z]+\\)[0-9]+$")
 		foreach( key key_ls
@@ -652,7 +627,7 @@ procedure( get_max_col_from_table_Derek06122018( key_ls)
 				char = rexSubstitute( "\\1")
 				char = stringToSymbol( char)
 				col = get_number_by_alphabet_Derek06122018( char)
-				;;
+
 				if( plusp( col) then
 					when( (col > max_col) (max_col = col))
 				else
@@ -671,44 +646,38 @@ procedure( output_csv_Derek06122018( csv_filename cell_table)
 	prog( ( out_port key_ls max_row max_col row col csv_line_ls csv_ls csv_line char cell )
 		unless( stringp( csv_filename) println( "ArgErr: output_csv() - csv_filename is not a string") return( nil))
 		unless( tablep( cell_table) println( "ArgErr: output_csv() - cell_table is not a table") return( nil))
-		;;
-		
-		;;
+
 		key_ls = cell_table->?
 		max_row = get_max_row_from_table_Derek06122018( key_ls)
 		max_col = get_max_col_from_table_Derek06122018( key_ls)
-		
-		;;
+
 		row = 1
 		csv_line_ls = nil
 		while( (row <= max_row)
 			col = 1
 			csv_ls = nil
-			
-			;;
+
 			while( (col <= max_col)
 				char = get_alphabet_by_number_Derek06122018( col++)
-				;;
+
 				if( symbolp( char) then
 					sprintf( key "%s%d" char row)
 					cell = cell_table[key]
-					;;
+
 					unless( stringp( cell) (cell = ""))
 					when( index( cell ",") sprintf( cell "\"%s\"" cell))
 					
-					;;
 					csv_ls = append1( csv_ls cell)
 				else
 					return( nil)
 				)
 			)
-			
-			;;
+
 			csv_line = buildString( csv_ls ",")
 			csv_line_ls = append1( csv_line_ls csv_line)
 			row++
 		)
-		;;
+
 		;;; output to csv file
 		when( isFile( csv_filename) deleteFile( csv_filename))
 		out_port = outfile( csv_filename "w")
@@ -746,15 +715,14 @@ procedure( filter_data_ls_Derek06122018(string_ls)
 procedure( get_sheet_id_Derek06122018( sheetname_ls @optional (global_sheets nil))
 	prog( ( number total result)
 		unless( dtpr( sheetname_ls) println( "ArgErr: get_sheet_id() - sheetname_ls is not a list") return( nil))
-		;;
-		
+
 		if( stringp( global_sheets) then
 			rexCompile( "sheet\\([0-9]+\\)")
 			
 			if( rexExecute( global_sheets) then
 				total = length( sheetname_ls)
 				number = atoi( rexSubstitute( "\\1"))
-				;;
+				
 				unless( (number > total)
 					result = global_sheets
 				)
@@ -790,8 +758,7 @@ procedure( add_double_quote_to_space_on_addr_Derek06122018( address)
 	;; address = "D:/workspace/boards/brd jimba"
 	prog( ( str_ls)
 		unless( stringp( address) println( "ArgErr: add_double_quote_to_space_on_addr() - address is not a string") return( nil))
-		;;
-		
+
 		str_ls = parseString( address "/")
 		str_ls = mapcar( lambda( (x) if( index( x " ") strcat( "\"" x "\"") x)) str_ls)
 		address = buildString( str_ls "/")
@@ -802,10 +769,15 @@ procedure( add_double_quote_to_space_on_addr_Derek06122018( address)
 
 procedure( extract_xlsx_Derek06122018( xlsx_addr question_to_select)
 	prog( ( extension excel_name msg filter)
-		unless( sh( "\"C:\\Program Files\\7-Zip\\7z\"") println( "ERROR: extract_xlsx() - Please install 7-zip to C:\\Program Files\\7-Zip\\7z") return( nil))
-		unless( or( null( question_to_select) stringp( question_to_select)) println( "ERROR: extract_xlsx() - question_to_select is neither nil or string") return( nil))
-		;;
-		
+		unless( sh( "\"C:\\Program Files\\7-Zip\\7z\"") 
+			println( "ERROR: extract_xlsx() - Please install 7-zip to C:\\Program Files\\7-Zip\\7z") 
+			return( nil)
+		)
+		unless( or( null( question_to_select) stringp( question_to_select)) 
+			println( "ERROR: extract_xlsx() - question_to_select is neither nil or string") 
+			return( nil)
+		)
+
 		unless( xlsx_addr
 			msg = if( stringp( question_to_select) question_to_select "Please select a xlsx file")
 			if( default_xlsm
@@ -829,8 +801,7 @@ procedure( extract_xlsx_Derek06122018( xlsx_addr question_to_select)
 		excel_name = lastelem( parseString( xlsx_addr "/"))
 		xlsx_addr = add_double_quote_to_space_on_addr_Derek06122018( xlsx_addr)
 		xlsx_addr = axlOSBackSlash( xlsx_addr)
-		
-		;;;
+
 		sprintf( cmd "C:\\\"Program Files\"\\7-Zip\\7z e %s -y" xlsx_addr)
 		unless( sh( cmd) println( "ERROR: extract_xlsx() - Fail to extract the excel file. Please close excel before using it") return( nil))
 		
@@ -844,8 +815,7 @@ procedure( get_sheet_id_ls_Derek06122018( sheetname_ls global_sheets)
 			println( "ArgErr: get_sheet_id_ls() - sheetname_ls is not a dtpr")
 			return( nil)
 		)
-		;;
-		
+
 		when( null( global_sheets) && onep( length( sheetname_ls))
 			global_sheets = car( sheetname_ls)
 		)
@@ -902,15 +872,13 @@ procedure( write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv 
 			println( "ArgErr: write_sheets() - col_limits is not a plusp integer")
 			return( nil)
 		)
-		;;
-		
-		;;;;;
+
 		cnt = 0
 		foreach( sheet_id sheet_id_ls
 			when( stringp( sheet_id)
 				;;;;; create dictionary by selected sheets
 				cell_table = get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits col_limits)
-			;	foreach( k cell_table printf( "[%s] - %s\n" k cell_table[k]))
+				;foreach( k cell_table printf( "[%s] - %s\n" k cell_table[k]))
 				
 				unless( tablep( cell_table)
 					printf( "ERROR: write_sheets() - Fail to create [%s] cell_table\n" sheet_id)
@@ -928,8 +896,7 @@ procedure( write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv 
 					sprintf( csv_filename _excel_csv_form cnt)
 					output_csv_Derek06122018( csv_filename cell_table)
 				)
-				
-				;;;;;
+
 				cnt++
 				cond(
 					( null( or( non_table non_csv))
@@ -977,8 +944,7 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 			printf( "ArgErr: MAIN() - col_limits has to be a integer >=0. col_limits=%L\n col_limits")
 			return( nil)
 		)
-		
-		;;;;;
+
 		init_Derek06122018()
 		
 		old_file_ls = getDirFiles( getWorkingDir())
@@ -1012,8 +978,7 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 		unless( dtpr( sheet_id_ls)
 			return( nil)
 		)
-		
-		;;;;;
+
 		result = write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv row_limits col_limits)
 		unless( result return( nil))
 		
@@ -1024,8 +989,7 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 			)
 		)
 		printf( "INFO: MAIN() - Deleting [%L]\n" new_file_ls)
-		
-		;;;
+
 		return( t)
 	)
 )
@@ -1037,8 +1001,8 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 (axlCmdRegister "manipulate_xlsx" 'manipulate_xlsx_main_Derek06122018)
 ; manipulate_xlsx_main_Derek06122018(?xlsx_addr "D:/workspace/boards/brd_assign_cset_accerating/Green_Bay_Assign_Class_Ecset_V16-0914_EE_SI.xlsm" ?global_sheets "Impedance" ?row_limits 50 ?col_limits 200)
 ; manipulate_xlsx_main_Derek06122018()
-; skill (encrypt "c:/skill/manipulate_xlsx_v3d5.il" "c:/skill/manipulate_xlsx_v3d5.ile")
-; (load "manipulate_xlsx_v3d5.il")
-; (load "manipulate_xlsx_v3d5.ile")
+; skill (encrypt "c:/skill/manipulate_xlsx_v3d6.il" "c:/skill/manipulate_xlsx_v3d6.ile")
+; (load "manipulate_xlsx_v3d6.il")
+; (load "manipulate_xlsx_v3d6.ile")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
