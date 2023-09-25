@@ -966,6 +966,7 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 	;;;		"sheet name": get sheet by name
 	prog( ( excel_name old_file_ls new_file_ls sheet_id_ls result)
 		when( and( non_table non_csv) println( "Both of non_table and non_csv are nil") return( nil))
+		unless( locker_main_Derek20210929() return( nil))
 		
 		unless( !minusp( row_limits) && integerp( row_limits)
 			printf( "ArgErr: MAIN() - row_limits has to be a integer >=0. row_limits=%L\n" row_limits)
@@ -1036,8 +1037,8 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 (axlCmdRegister "manipulate_xlsx" 'manipulate_xlsx_main_Derek06122018)
 ; manipulate_xlsx_main_Derek06122018(?xlsx_addr "D:/workspace/boards/brd_assign_cset_accerating/Green_Bay_Assign_Class_Ecset_V16-0914_EE_SI.xlsm" ?global_sheets "Impedance" ?row_limits 50 ?col_limits 200)
 ; manipulate_xlsx_main_Derek06122018()
-; skill (encrypt "c:/skill/manipulate_xlsx_v3d4.il" "c:/skill/manipulate_xlsx_v3d4.ile")
-; (load "manipulate_xlsx_v3d4.il")
-; (load "manipulate_xlsx_v3d4.ile")
+; skill (encrypt "c:/skill/manipulate_xlsx_v3d5.il" "c:/skill/manipulate_xlsx_v3d5.ile")
+; (load "manipulate_xlsx_v3d5.il")
+; (load "manipulate_xlsx_v3d5.ile")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
