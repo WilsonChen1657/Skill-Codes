@@ -439,35 +439,82 @@ procedure( get_value_from_section_Derek06122018( section tag)
 	)
 )
 
-procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
-	prog( ( file_addr cell_table in_port key key_len tmp line all_line section nm addr pos row to_limit)
+procedure( get_addr_from_section_Derek06122018( section)
+	prog( ( addr)
+		addr = get_attr_val_Derek06122018( "r" section)
+		addr = substring( addr 2 ((strlen addr) - 2))
+		
+		return( addr)
+	)
+)
+
+procedure( get_rc_from_addr_Derek06122018( addr)
+	prog( ( col row col_text row_text)
+	
+		col = row =0
+		
+		rexCompile( "\\([A-Z]+\\)\\([0-9]+\\)")
+		when( rexExecute( addr)
+			col_text = rexSubstitute( "\\1")
+			row_text = rexSubstitute( "\\2")
+		)
+		
+		when( stringp( col_text)
+			col = get_number_by_alphabet_Derek06122018( col_text)
+		)
+		
+		when( stringp( row_text)
+			row = atoi( row_text)
+		)
+		
+		row_col = list( row col)
+		
+		
+		return( row_col)
+	)
+)
+
+procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits col_limits)
+	prog( ( file_addr cell_table in_port key tmp line all_line section nm addr pos row to_limit len_old len_new)
 		unless( dtpr( sharedstring_ls) println( "ArgErr: get_sheet_content() - sharedstring_ls is not a dtpr") return( nil))
 		unless( stringp( sheet_id) println( "ArgErr: get_sheet_content() - sheet_id is not a string") return( nil))
-		unless( or( null( row_limits) and( plusp( row_limits) integerp( row_limits)))
-			println( "ArgErr: get_sheet_content() - row_limits is not a plusp integer") return( nil))
+		unless( !minusp( row_limits) && integerp( row_limits)
+			println( "ArgErr: get_sheet_content() - row_limits is not a plusp integer")
+			return( nil)
+		)
+		unless( !minusp( col_limits) && integerp( col_limits)
+			println( "ArgErr: get_sheet_content() - col_limits is not a plusp integer")
+			return( nil)
+		)
 		;;
 		
-		all_line = line = ""
+		;;;;;
 		sprintf( file_addr "%s/%s.xml" _work_path sheet_id)
 		all_line = read_file_Derek06122018( file_addr)
 		unless( stringp( all_line) return( nil))
 		
+		;;;;; reduce all line
+		unless( zerop( row_limits)
+			sprintf( row_section "<row r=\"%d\"" row_limits)
+			pos = nindex( all_line row_section)
+			when( integerp( pos)
+				all_line = substring( all_line 1 sub1( pos))
+			)
+		)
+		
 		;;;
 		cell_table = makeTable( "cell_table" nil)
-		key = "<c "
-		key_len = strlen( key)
-		len = ( strlen( all_line) - strlen( key))
 		
 		;;
 		to_limit = nil
+		key = "<c "
 		line = index( all_line key)
-		rexCompile( "\\([0-9]+\\)")
 		while( and( stringp( line) null( to_limit))
 			section = get_section_Derek06122018( "c" line)
 			nm = get_section_Derek06122018( "v" section)
 			
 			;;
-			when( stringp( nm)
+			if( stringp( nm) then
 				;printf( "INFO: get_sheet_content() - value:[%L] section:[%L]\n" nm section)
 				
 				; nm = substring( nm 4 ((strlen nm) - 7))
@@ -477,29 +524,39 @@ procedure( get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
 				)
 				
 				;;
-				addr = get_attr_val_Derek06122018( "r" section)
-				addr = substring( addr 2 ((strlen addr) - 2))
+				addr = get_addr_from_section_Derek06122018( section)
+				row_col = get_rc_from_addr_Derek06122018( addr)
+				row = car( row_col)
+				col = cadr( row_col)
 				
-				;;
-				if( plusp( row_limits) then
-					if( rexExecute( addr) then
-						row = rexSubstitute( "\\1")
-						row = atoi( row)
-						if( (row > row_limits)
-							to_limit = t
-							cell_table[addr] = nm
-						)
-					else
-						printf( "ERROR: get_sheet_content() - Fail to identify excel address[%s] on sheet[%s]\n" addr sheet_id)
-					)
-				else
-					cell_table[addr] = nm
+				when( zerop( row) || zerop( col)
+					printf( "ERROR: get_sheet_content() - Failt to get address(row=%L col=&L) in section[%L]\n" row col section)
+					to_limit = t
 				)
+				
+				;;;;; data access process
+				when( ( zerop( row_limits) || row <= row_limits) && ( zerop( col_limits) || col <= col_limits)
+					cell_table[ addr] = nm
+				)
+				
+				;;;;; stop and process
+				when( !zerop( row_limits) && row > row_limits
+					to_limit = t
+				)
+				
+				;;;;; go to next section process
+				if( !zerop( col_limits) && col > col_limits then
+					line = index( line "<row")
+				else
+					;;;;; remove the current section, otherwise, it will always stay at the same location
+					line = substring( line strlen( section))
+					line = index( line key)
+				)
+			else
+				;;;;; remove the current section, otherwise, it will always stay at the same location
+				line = substring( line strlen( section))
+				line = index( line key)
 			)
-			
-			;;
-			line = substring( line strlen( section))
-			line = index( line key)
 		)
 		
 		;;;
@@ -831,14 +888,20 @@ procedure( get_sheet_id_ls_Derek06122018( sheetname_ls global_sheets)
 	)
 )
 
-procedure( write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv row_limits)
+procedure( write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv row_limits col_limits)
 	prog( ( cnt cell_table csv_filename table_filename)
 		unless( dtpr( sheet_id_ls) println( "ArgErr: write_sheets() - sheet_id_ls is not a dtpr") return( nil))
 		unless( stringp( excel_name) println( "ArgErr: write_sheets() - excel_name is not a string") return( nil))
 		unless( booleanp( non_table) println( "ArgErr: write_sheets() - non_table is not a boolean") return( nil))
 		unless( booleanp( non_csv) println( "ArgErr: write_sheets() - non_csv is not a boolean") return( nil))
-		unless( or( null( row_limits) and( plusp( row_limits) integerp( row_limits)))
-			println( "ArgErr: write_sheets() - row_limits is not a plusp integer") return( nil))
+		unless( !minusp( row_limits) && integerp( row_limits)
+			println( "ArgErr: write_sheets() - row_limits is not a plusp integer")
+			return( nil)
+		)
+		unless( !minusp( col_limits) && integerp( col_limits)
+			println( "ArgErr: write_sheets() - col_limits is not a plusp integer")
+			return( nil)
+		)
 		;;
 		
 		;;;;;
@@ -846,7 +909,7 @@ procedure( write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv 
 		foreach( sheet_id sheet_id_ls
 			when( stringp( sheet_id)
 				;;;;; create dictionary by selected sheets
-				cell_table = get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits)
+				cell_table = get_sheet_content_Derek06122018( sharedstring_ls sheet_id row_limits col_limits)
 			;	foreach( k cell_table printf( "[%s] - %s\n" k cell_table[k]))
 				
 				unless( tablep( cell_table)
@@ -891,7 +954,8 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 													(question_to_select nil)
 													(non_table nil)
 													(non_csv nil)
-													(row_limits nil)
+													(row_limits 1000)
+													(col_limits 1000)
 													(default_xlsm nil))
 	; manipulate_xlsx_main_Derek06122018( nil nil)
 	;;; global_sheets:
@@ -903,6 +967,17 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 	prog( ( excel_name old_file_ls new_file_ls sheet_id_ls result)
 		when( and( non_table non_csv) println( "Both of non_table and non_csv are nil") return( nil))
 		
+		unless( !minusp( row_limits) && integerp( row_limits)
+			printf( "ArgErr: MAIN() - row_limits has to be a integer >=0. row_limits=%L\n" row_limits)
+			return( nil)
+		)
+		
+		unless( !minusp( col_limits) && integerp( col_limits)
+			printf( "ArgErr: MAIN() - col_limits has to be a integer >=0. col_limits=%L\n col_limits")
+			return( nil)
+		)
+		
+		;;;;;
 		init_Derek06122018()
 		
 		old_file_ls = getDirFiles( getWorkingDir())
@@ -938,16 +1013,16 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 		)
 		
 		;;;;;
-		result = write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv row_limits)
+		result = write_sheets_Derek06122018( sheet_id_ls excel_name non_table non_csv row_limits col_limits)
 		unless( result return( nil))
-
+		
 		;;;;; delete unzipped files and dir
 		foreach( file new_file_ls
 			when( isFile( file)
 				deleteFile( file)
-				printf( "INFO: MAIN() - %s has been deleted" file)
 			)
 		)
+		printf( "INFO: MAIN() - Deleting [%L]\n" new_file_ls)
 		
 		;;;
 		return( t)
@@ -959,10 +1034,10 @@ procedure( manipulate_xlsx_main_Derek06122018( @key (xlsx_addr nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Setup
 
 (axlCmdRegister "manipulate_xlsx" 'manipulate_xlsx_main_Derek06122018)
-; manipulate_xlsx_main_Derek06122018(?xlsx_addr "D:/workspace/boards/brd_bellona_haha/Raider_Stackup_v0.1_0907.xlsx" ?global_sheets "sheet6")
+; manipulate_xlsx_main_Derek06122018(?xlsx_addr "D:/workspace/boards/brd_assign_cset_accerating/Green_Bay_Assign_Class_Ecset_V16-0914_EE_SI.xlsm" ?global_sheets "Impedance" ?row_limits 50 ?col_limits 200)
 ; manipulate_xlsx_main_Derek06122018()
-; skill (encrypt "c:/skill/manipulate_xlsx_v3d3.il" "c:/skill/manipulate_xlsx_v3d3.ile")
-; (load "manipulate_xlsx_v3d3.il")
-; (load "manipulate_xlsx_v3d3.ile")
+; skill (encrypt "c:/skill/manipulate_xlsx_v3d4.il" "c:/skill/manipulate_xlsx_v3d4.ile")
+; (load "manipulate_xlsx_v3d4.il")
+; (load "manipulate_xlsx_v3d4.ile")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End of Setup
