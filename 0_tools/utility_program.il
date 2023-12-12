@@ -23,6 +23,7 @@ setq( _skill_package_path strcat( _flex_host_dir "footprint_building_aid_skill/o
 setq( _month_ls list( nil "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
 setq( _alphabet_total 26)
 setq( _alphabet_ls list( nil 'A 'B 'C 'D 'E 'F 'G 'H 'I 'J 'K 'L 'M 'N 'O 'P 'Q 'R 'S 'T 'U 'V 'W 'X 'Y 'Z))
+setq( _utpg_selected_obj_ls nil)
 ;endregion
 
 ;region Function
@@ -684,21 +685,37 @@ procedure( OpenDirectory_utilityprogram( dir)
 )
 
 procedure( SelectObjectByUser_utilityprogram( filter @key (prompt nil))
-	prog( ( obj_ls)
+	prog( ( display_popup)
 		SetFindFilter_utilityprogram( filter)
-		CreateDoneCancelPopup_utilityprogram()
+		display_popup = axlUIPopupDefine( nil list( list( "Done" 'Done_utilityprogram) list( "Cancel" 'Cancel_utilityprogram)))
+		axlUIPopupSet( display_popup)
+		;axlClearSelSet()
+		_utpg_selected_obj_ls = nil
 		while( axlSelect( ?prompt prompt)
-			obj_ls = axlGetSelSet()
+			_utpg_selected_obj_ls = axlGetSelSet()
 		)
 		
 		axlClearSelSet()
 		axlUIPopupSet( nil)
-		when( obj_ls
+		when( _utpg_selected_obj_ls
 			ResetFindFilter_utilityprogram()
 		)
 		
-		return( obj_ls)
+		return( _utpg_selected_obj_ls)
 	)
+)
+
+procedure( Done_utilityprogram()
+    axlClearDynamics()
+    axlFinishEnterFun()
+    axlUIPopupSet( nil)
+)
+
+procedure( Cancel_utilityprogram()
+    axlClearDynamics()
+    axlCancelEnterFun()
+    _utpg_selected_obj_ls = nil
+    axlUIPopupSet( nil)
 )
 
 procedure( DeleteLayer_utilityprogram( layer_ls)
@@ -921,10 +938,10 @@ procedure( CompareListContent_utilityprogram( list_a list_b)
 	)
 )
 
-procedure( OpenFile_utilityprogram( file_path)
+procedure( StartFile_utilityprogram( file_path)
 	prog( ()
 		if( index( file_path " ") then
-			PrintMsg_utilityprogram( "Please remove spaces in file path!" ?title "OpenFile()" ?level 'error)
+			PrintMsg_utilityprogram( "Please remove spaces in file path!" ?title "StartFile()" ?level 'error)
 			return( nil)
 		else
 			shell( strcat( "start " file_path))
@@ -976,6 +993,15 @@ procedure( ParseDateTimeStrToFormat_utilityprogram( date_time_str)
 
 		result_str = strcat( date " " time)
 		return( result_str)
+	)
+)
+
+procedure( GetTimeStamp_utilityprogram()
+	let( ( date time time_stamp)
+		sscanf( getCurrentTime() "%s %d %d:%d:%d %d" month day hour minute second year)
+		sprintf( date "%.4d%.2d%.2d" year listnindex( _month_ls month) day)
+		sprintf( time "%.2d%.2d%.2d" hour minute second)
+		time_stamp = strcat( date "_" time)
 	)
 )
 
@@ -1822,7 +1848,7 @@ procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 ;endregion
 
 /*
-(encrypt "c:/skill/utility_program_v3d8.il" "c:/skill/utility_program_v3d8.ile")
-(load "utility_program_v3d8.il")
-(load "utility_program_v3d8.ile")
+(encrypt "c:/skill/utility_program_v3d9.il" "c:/skill/utility_program_v3d9.ile")
+(load "utility_program_v3d9.il")
+(load "utility_program_v3d9.ile")
 */
