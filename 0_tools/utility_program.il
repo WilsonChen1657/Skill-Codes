@@ -574,10 +574,10 @@ procedure( CreateShapeByPoints_utilityprogram( points layer)
 	)
 )
 
-procedure( OpenHelpFile_utilityprogram( file_name)
+procedure( OpenHelpFile_utilityprogram( file_name @optional (extension ".pdf"))
 	let( ( help_path)
 		help_path = strcat( _flex_host_dir "footprint_building_aid_skill/Help/")
-		OpenFile_utilityprogram( help_path file_name ".pdf")
+		OpenFile_utilityprogram( help_path file_name extension)
 	)
 )
 
@@ -587,6 +587,10 @@ procedure( OpenFile_utilityprogram( dir file_name extension)
 			file_ls = cddr( getDirFiles( dir))
 			result = car( setof( x file_ls and( index( x extension) index( x file_name))))
 			when( result
+				unless( equal( substring( dir strlen( dir) 1) "/")
+					dir = strcat( dir "/")
+				)
+
 				shell( strcat( dir result))
 			)
 		)
@@ -1846,7 +1850,7 @@ procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 ;endregion
 
 /*
-(encrypt "c:/skill/utility_program_v4d0.il" "c:/skill/utility_program_v4d0.ile")
-(load "utility_program_v4d0.il")
-(load "utility_program_v4d0.ile")
+(encrypt "c:/skill/utility_program_v4d1.il" "c:/skill/utility_program_v4d1.ile")
+(load "utility_program_v4d1.il")
+(load "utility_program_v4d1.ile")
 */
