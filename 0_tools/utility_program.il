@@ -998,9 +998,13 @@ procedure( ParseDateTimeStrToFormat_utilityprogram( date_time_str)
 	)
 )
 
-procedure( GetTimeStamp_utilityprogram()
+procedure( GetTimeStamp_utilityprogram( @optional (date_time nil))
 	let( ( date time time_stamp)
-		sscanf( getCurrentTime() "%s %d %d:%d:%d %d" month day hour minute second year)
+		unless( date_time
+			date_time = getCurrentTime()
+		)
+
+		sscanf( date_time "%s %d %d:%d:%d %d" month day hour minute second year)
 		sprintf( date "%.4d%.2d%.2d" year listnindex( _month_ls month) day)
 		sprintf( time "%.2d%.2d%.2d" hour minute second)
 		time_stamp = strcat( date "_" time)
@@ -1355,12 +1359,7 @@ procedure( SetUpLog_utilityprogram( log_name @key (mode "w") (log_time nil))
 			createDir( log_dir)
 		)
 		
-		if( mode == "a" && log_time
-			sscanf( log_time "%s %d %d:%d:%d %d" month date hour minute second year)
-			sscanf( getCurrentTime() "%s %d %d:%d:%d %d" month date hour minute second year)
-		)
-		
-		sprintf( log_file_name "%s-%.4d%s%.2d-%.2d%.2d%.2d.log" log_name year month date hour minute second)
+		sprintf( log_file_name "%s-%s.log" log_name GetTimeStamp_utilityprogram( log_time))
 		sprintf( log_path "%s/%s" log_dir log_file_name)
 		
 		out_port = outfile( log_path mode)
@@ -1850,7 +1849,7 @@ procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 ;endregion
 
 /*
-(encrypt "c:/skill/utility_program_v4d1.il" "c:/skill/utility_program_v4d1.ile")
-(load "utility_program_v4d1.il")
-(load "utility_program_v4d1.ile")
+(encrypt "c:/skill/utility_program_v4d2.il" "c:/skill/utility_program_v4d2.ile")
+(load "utility_program_v4d2.il")
+(load "utility_program_v4d2.ile")
 */
