@@ -71,48 +71,27 @@ procedure( Trim_utilityprogram( str @optional (target " "))
 	) ; End Prog
 ) ; End Procedure
 
-
 procedure( GetUnitValueByMils_utilityprogram( mil_value)
 	prog( ( value)
-		unless( numberp( mil_value)
-			return( 0.0)
-		)
-		
-		_allegro_unit = car( axlDBGetDesignUnits())
-		value = 0.0
-		case( _allegro_unit
-			( "mils"
-				value = mil_value
-			)
-			( "millimeters"
-				value = axlMKSConvert( mil_value "MILS" "MM")
-				;_mil_by_mm = 39.37
-				;value = mil_value / _mil_by_mm
-			)
-		)
-		
-		return( value)
+		return( GetUnitValue_utilityprogram( mil_value "MILS"))
 	)
 )
 
 procedure( GetUnitValueByMM_utilityprogram( mm_value)
 	prog( ( value)
-		unless( numberp( mm_value)
-			return( 0.0)
+		return( GetUnitValue_utilityprogram( mm_value "MM"))
+	)
+)
+
+procedure( GetUnitValue_utilityprogram( value source_unit)
+	prog( ( result_value)
+		unless( and( numberp( value) stringp( source_unit))
+			return( nil)
 		)
 		
 		_allegro_unit = car( axlDBGetDesignUnits())
-		value = 0.0
-		case( _allegro_unit
-			( "mils"
-				value = axlMKSConvert( mm_value "MM" "MILS")
-			)
-			( "millimeters"
-				value = mm_value
-			)
-		)
-		
-		return( value)
+		result_value = axlMKSConvert( value source_unit _allegro_unit)
+		return( result_value)
 	)
 )
 
@@ -633,7 +612,7 @@ procedure( CheckOKToProceed_utilityprogram()
 )
 
 procedure( SpeedUp_utilityprogram( @optional (enable nil))
-	let( ()
+	let( ( msg_title)
 		; shape dynamic fill set to disabled
 		if( enable
 			axlDBControl( 'dynamicFillMode 'wysiwyg)
@@ -642,6 +621,25 @@ procedure( SpeedUp_utilityprogram( @optional (enable nil))
 		
 		; disabled on-line DRC
 		axlDBControl( 'drcEnable enable)
+
+		msg_title = "SpeedUp()"
+		when( and( enable axlUIYesNo( "Do you want to update to smooth and DRCs?"))
+			PrintMsg_utilityprogram( "Starting update to smooth" ?title msg_title)
+			;time_start = getCurrentTime()
+			; update dynamic shapes
+			axlDBDynamicShapes( t)
+			;time_end = getCurrentTime()
+			PrintMsg_utilityprogram( "Finish update to smooth" ?title msg_title)
+			;ProcessTime_createfullcontactroutekeepout( "Update to smooth" time_start time_end)
+		
+			PrintMsg_utilityprogram( "Starting update DRCs" ?title msg_title)
+			;time_start = getCurrentTime()
+			; update DRC
+			axlShell( "drc update")
+			;time_end = getCurrentTime()
+			PrintMsg_utilityprogram( "Finish update DRCs" ?title msg_title)
+			;ProcessTime_createfullcontactroutekeepout( "Update DRCs" time_start time_end)
+		)
 	)
 )
 
@@ -1287,7 +1285,7 @@ procedure( GetAll_utilityprogram( layer_ls)
 			layer_ls = list( layer_ls)
 		)
 
-		obj_ls = GetFindFilter_utilityprogram( layer nil)
+		obj_ls = GetFindFilter_utilityprogram( layer_ls nil)
 		obj_ls = setof( x obj_ls member( x->layer layer_ls))
 		return( obj_ls)
 	)
@@ -1848,7 +1846,7 @@ procedure( GetXmlAttribute_utilityprogram( section key @optional (pattern ".*"))
 ;endregion
 
 /*
-(encrypt "c:/skill/utility_program_v3d9.il" "c:/skill/utility_program_v3d9.ile")
-(load "utility_program_v3d9.il")
-(load "utility_program_v3d9.ile")
+(encrypt "c:/skill/utility_program_v4d0.il" "c:/skill/utility_program_v4d0.ile")
+(load "utility_program_v4d0.il")
+(load "utility_program_v4d0.ile")
 */
